@@ -1,0 +1,36 @@
+{
+  "name": "flowarm-premium-websystem",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --port 5173",
+    "build": "vite build",
+    "preview": "vite preview --host 127.0.0.1",
+    "server": "node server/index.js",
+    "prepare-assets": "node scripts/prepare-assets.mjs"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "^5.0.4",
+    "vite": "^7.1.12",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "framer-motion": "^12.23.24",
+    "gsap": "^3.13.0",
+    "lucide-react": "^0.468.0",
+    "jspdf": "^3.0.3",
+    "express": "^5.1.0",
+    "cors": "^2.8.5",
+    "jsonwebtoken": "^9.0.2",
+    "bcryptjs": "^3.0.2",
+    "nodemailer": "^7.0.10",
+    "pg": "^8.16.3",
+    "dotenv": "^17.2.3"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.17",
+    "postcss": "^8.5.6",
+    "autoprefixer": "^10.4.21",
+    "sharp": "^0.34.5"
+  }
+}
