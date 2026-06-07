@@ -83,11 +83,11 @@ export const cityPages = {
 };
 
 export const defaultPrices = {
-  setup: 690,
-  milling: 72,
-  manifold: 540,
-  closing: 18,
-  leveling: 26
+  setup: 350,
+  milling: 35,
+  manifold: 500,
+  closing: 10,
+  leveling: 10
 };
 
 export const demoRequests = [

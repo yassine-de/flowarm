@@ -1,7 +1,7 @@
 export function calculateOffer(form, prices) {
   const area = Number(form.area || 0);
   const floors = form.floors === "3+" ? 3 : Number(form.floors || 1);
-  const manifolds = Math.max(1, Math.ceil(area / 95), floors);
+  const manifolds = Math.max(1, floors);
   const positions = [
     { label: "Anfahrt/Rüstzeug", unit: "Pauschale", qty: 1, price: prices.setup },
     { label: "Fräsen & Rohrlegung", unit: "m²", qty: area, price: prices.milling },

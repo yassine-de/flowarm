@@ -13,7 +13,7 @@ const initial = {
   floors: "1",
   plan: "Ja, Grundriss hochladen",
   zipCity: "",
-  timeframe: "1–3 Monate",
+  timeframe: "1-3 Monate",
   name: "",
   email: "",
   phone: "",
@@ -33,8 +33,8 @@ const choiceDetails = {
   "Ja, Grundriss hochladen": ["PDF, Foto oder Plan später ergänzen", Upload],
   "Nein, Maße manuell eingeben": ["Wir führen Sie durch die Maße", Ruler],
   Sofort: ["Schnellstmögliche Umsetzung", CalendarCheck],
-  "1–3 Monate": ["Konkrete Planung in Kürze", CalendarCheck],
-  "3–6 Monate": ["Mittelfristiges Projekt", CalendarCheck],
+  "1-3 Monate": ["Konkrete Planung in Kürze", CalendarCheck],
+  "3-6 Monate": ["Mittelfristiges Projekt", CalendarCheck],
   "Noch offen": ["Erst Preisrahmen berechnen", MapPinned]
 };
 
@@ -55,8 +55,8 @@ export default function QuizFunnel({ t }) {
   const [step, setStep] = useState(0);
   const [form, setForm] = useState(initial);
   const offer = useMemo(() => calculateOffer(form, defaultPrices), [form]);
-
   const set = (key, value) => setForm((current) => ({ ...current, [key]: value }));
+  const inputClass = "rounded-md border border-ink/12 bg-[#fff8ed] px-4 py-4 text-ink shadow-inner shadow-black/5 outline-none transition placeholder:text-ink/38 focus:border-warm focus:bg-white focus:ring-4 focus:ring-warm/15";
   const steps = [
     { title: "Immobilientyp", field: "propertyType", choices: ["Wohnung", "Einfamilienhaus", "Mehrfamilienhaus", "Gewerbe"] },
     { title: "Projektart", field: "projectType", choices: ["Sanierung", "Neubau"] },
@@ -64,7 +64,7 @@ export default function QuizFunnel({ t }) {
     { title: "Stockwerke", field: "floors", choices: ["1", "2", "3+"] },
     { title: "Grundriss vorhanden?", field: "plan", choices: ["Ja, Grundriss hochladen", "Nein, Maße manuell eingeben"] },
     { title: "Stadt / PLZ", custom: "zipCity" },
-    { title: "Zeitraum", field: "timeframe", choices: ["Sofort", "1–3 Monate", "3–6 Monate", "Noch offen"] },
+    { title: "Zeitraum", field: "timeframe", choices: ["Sofort", "1-3 Monate", "3-6 Monate", "Noch offen"] },
     { title: "Kontaktdaten", custom: "contact" },
     { title: "Preisübersicht", custom: "price" }
   ];
@@ -99,23 +99,27 @@ export default function QuizFunnel({ t }) {
                   </div>
                 )}
                 {current.custom === "area" && (
-                  <div className="mt-8">
-                    <div className="flex items-end gap-3">
-                      <input type="number" value={form.area} onChange={(e) => set("area", e.target.value)} className="w-36 rounded-md border border-ink/12 px-4 py-3 text-3xl font-semibold" />
+                  <div className="mt-8 rounded-lg border border-warm/18 bg-[#fff8ed] p-5 shadow-inner shadow-black/5">
+                    <div className="flex flex-wrap items-end gap-3">
+                      <input type="number" value={form.area} onChange={(e) => set("area", e.target.value)} className="w-36 rounded-md border border-warm/25 bg-white px-4 py-3 text-3xl font-semibold text-ink shadow-sm outline-none transition focus:border-warm focus:ring-4 focus:ring-warm/15" />
                       <span className="pb-3 text-ink/60">m² beheizte Fläche</span>
                     </div>
+                    <p className="mt-3 max-w-2xl text-sm leading-6 text-ink/55">Gemeint ist die beheizte Wohn- oder Nutzfläche. Nicht beheizte Nebenräume können Sie weglassen.</p>
                     <input type="range" min="30" max="350" value={form.area} onChange={(e) => set("area", e.target.value)} className="mt-8 w-full accent-warm" />
                   </div>
                 )}
                 {current.custom === "zipCity" && (
-                  <input value={form.zipCity} onChange={(e) => set("zipCity", e.target.value)} placeholder="z. B. 60311 Frankfurt" className="mt-8 w-full rounded-md border border-ink/12 px-4 py-4" />
+                  <div className="mt-8 rounded-lg border border-warm/18 bg-[#fff8ed] p-5 shadow-inner shadow-black/5">
+                    <input value={form.zipCity} onChange={(e) => set("zipCity", e.target.value)} placeholder="z. B. 60311 Frankfurt" className={`${inputClass} w-full`} />
+                    <p className="mt-3 text-sm leading-6 text-ink/55">Damit planen wir Anfahrt, regionale Verfügbarkeit und eine realistische Terminoption.</p>
+                  </div>
                 )}
                 {current.custom === "contact" && (
                   <div className="mt-7 grid gap-4 sm:grid-cols-2">
-                    <input value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="Name" className="rounded-md border border-ink/12 px-4 py-4" />
-                    <input value={form.email} onChange={(e) => set("email", e.target.value)} placeholder="E-Mail" className="rounded-md border border-ink/12 px-4 py-4" />
-                    <input value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="Telefon" className="rounded-md border border-ink/12 px-4 py-4" />
-                    <input value={form.password} onChange={(e) => set("password", e.target.value)} placeholder="Passwort" type="password" className="rounded-md border border-ink/12 px-4 py-4" />
+                    <input value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="Name" className={inputClass} />
+                    <input value={form.email} onChange={(e) => set("email", e.target.value)} placeholder="E-Mail" className={inputClass} />
+                    <input value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="Telefon" className={inputClass} />
+                    <input value={form.password} onChange={(e) => set("password", e.target.value)} placeholder="Passwort" type="password" className={inputClass} />
                   </div>
                 )}
                 {current.custom === "price" && (
