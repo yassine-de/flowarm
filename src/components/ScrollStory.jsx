@@ -32,9 +32,15 @@ export default function ScrollStory({ t, go }) {
         <SceneSection key={scene[0]} scene={scene} image={assets.scenes[index]} active={active === index} />
       ))}
       <div className="absolute inset-x-0 top-24 z-10 mx-auto flex max-w-7xl justify-between px-4 sm:px-6">
-        <span className="rounded-full border border-warm/35 bg-black/45 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-warm backdrop-blur">
-          {t.heroBadge}
-        </span>
+        <div className="flex max-w-[calc(100vw-2rem)] flex-wrap items-center gap-2 rounded-md border border-warm/35 bg-[#fff8ed] px-4 py-3 text-ink shadow-2xl shadow-black/45">
+          <span className="h-3 w-3 shrink-0 rounded-full bg-warm shadow-[0_0_22px_rgba(242,138,24,.95)]" />
+          {t.heroBadge.split(".").filter(Boolean).map((item, index) => (
+            <span key={item.trim()} className="flex items-center gap-2 rounded-sm bg-white px-2 py-1 text-[11px] font-black uppercase tracking-[0.08em] text-ink shadow-sm sm:text-xs">
+              {index > 0 && <span className="hidden h-1.5 w-1.5 rounded-full bg-warm sm:block" />}
+              {item.trim()}
+            </span>
+          ))}
+        </div>
       </div>
       <div className="absolute inset-x-0 bottom-0 z-10">
         <div className="mx-auto grid max-w-7xl gap-8 px-4 pb-14 sm:px-6 md:grid-cols-[1.1fr_.9fr] md:items-end">

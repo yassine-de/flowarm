@@ -63,35 +63,62 @@ export const cityPages = {
   "/fussbodenheizung-frankfurt": {
     city: "Frankfurt",
     title: "Fußbodenheizung fräsen in Frankfurt",
-    text: "FloWarm realisiert nachträgliche Fußbodenheizung in Frankfurter Wohnungen, Häusern und Gewerbeflächen mit sauberer Frästechnik, planbaren Terminen und transparentem Sofortangebot."
+    text: "FloWarm realisiert nachträgliche Fußbodenheizung in Frankfurter Wohnungen, Häusern und Gewerbeflächen mit sauberer Frästechnik, planbaren Terminen und transparentem Sofortangebot.",
+    intro: "In Frankfurt treffen Altbauwohnungen, moderne Eigentumswohnungen, Büroflächen und Einfamilienhäuser auf eng getaktete Sanierungspläne. Genau dafür ist das FBH-Fräsen im Bestand ideal: Der vorhandene Estrich bleibt erhalten, die Aufbauhöhe bleibt niedrig und die Baustelle kann klar geplant werden.",
+    districts: ["Innenstadt", "Sachsenhausen", "Bornheim", "Bockenheim", "Nordend", "Westend", "Gallus", "Höchst"],
+    localFocus: "Besonders in bewohnten Stadtlagen zählt eine saubere, schnelle Ausführung. Unsere Teams planen Anfahrt, Material und Frästechnik so, dass die Arbeiten in Frankfurt kompakt und kalkulierbar bleiben.",
+    faq: [
+      ["Eignet sich das Verfahren für Frankfurter Altbauwohnungen?", "Ja, sofern der Estrich technisch geeignet ist. Der Konfigurator liefert den Preisrahmen, die finale Prüfung klärt Estrichstärke, Zustand und Heizkreisplanung."],
+      ["Wie schnell bekomme ich ein Angebot in Frankfurt?", "Direkt nach dem Konfigurator sehen Sie einen vorläufigen Festpreis. Anschließend kann FloWarm die technische Prüfung und Terminplanung vorbereiten."],
+      ["Arbeitet FloWarm auch in Mehrfamilienhäusern?", "Ja. Wichtig sind Zugang, Etage, Fläche und mögliche Abstimmung mit Verwaltung oder Eigentümergemeinschaft."]
+    ]
   },
   "/fussbodenheizung-friedberg": {
     city: "Friedberg",
     title: "Fußbodenheizung nachrüsten in Friedberg",
-    text: "Für Friedberg und Umgebung planen wir FBH-Fräsen, Rohrverlegung und Verteilertechnik als eingespielten Ablauf mit regionaler Nähe und schneller Angebotserstellung."
+    text: "Für Friedberg und Umgebung planen wir FBH-Fräsen, Rohrverlegung und Verteilertechnik als eingespielten Ablauf mit regionaler Nähe und schneller Angebotserstellung.",
+    intro: "In Friedberg werden viele Häuser im Bestand modernisiert: neue Bodenbeläge, effizientere Heiztechnik und mehr Wohnkomfort. Mit eingefräster Fußbodenheizung lassen sich diese Ziele verbinden, ohne den kompletten Bodenaufbau neu zu erstellen.",
+    districts: ["Kernstadt", "Ockstadt", "Dorheim", "Bauernheim", "Bruchenbrücken", "Ossenheim"],
+    localFocus: "Kurze Wege in der Wetterau helfen bei Planung, Baustellenabstimmung und Nachbetreuung. Für Friedberg kalkulieren wir Fläche, Etagen und Verteiler transparent im Sofortangebot.",
+    faq: [
+      ["Kann ich während der Sanierung im Haus bleiben?", "Das hängt von Fläche, Raumaufteilung und Bauablauf ab. Der 3-Tage-Prozess hilft, die belastenden Arbeiten möglichst kurz zu halten."],
+      ["Welche Bodenbeläge sind danach möglich?", "Viele gängige Beläge sind möglich. Entscheidend sind Systemaufbau, Ausgleich und die Freigabe durch Bodenleger oder Hersteller."],
+      ["Gilt der Sofortpreis verbindlich?", "Er ist ein vorläufiger Festpreis vorbehaltlich technischer Prüfung vor Ort."]
+    ]
   },
   "/fussbodenheizung-wetterau": {
     city: "Wetterau",
     title: "Fußbodenheizung für die Wetterau",
-    text: "In der Wetterau verbindet FloWarm präzise Estrichfräsen mit einer effizienten Installation für Sanierungen und Modernisierungen im Bestand."
+    text: "In der Wetterau verbindet FloWarm präzise Estrichfräsen mit einer effizienten Installation für Sanierungen und Modernisierungen im Bestand.",
+    intro: "Die Wetterau ist geprägt von Einfamilienhäusern, Hofanlagen, Wohnungen und Gewerbeflächen. Wer energetisch modernisiert, möchte planbare Kosten und möglichst wenig Eingriff in die Substanz. Genau hier setzt FloWarm mit sauberem FBH-Fräsen an.",
+    districts: ["Bad Nauheim", "Friedberg", "Karben", "Butzbach", "Niddatal", "Rosbach", "Wölfersheim", "Büdingen"],
+    localFocus: "Für Projekte in der Wetterau verbinden wir regionale Planung mit standardisiertem Ablauf: Fläche erfassen, Preis berechnen, technische Prüfung, Umsetzung in klaren Tagesetappen.",
+    faq: [
+      ["Welche Orte in der Wetterau deckt FloWarm ab?", "FloWarm plant Projekte in der gesamten Wetterau und angrenzenden Regionen. Der Konfigurator fragt PLZ und Stadt ab."],
+      ["Ist FBH-Fräsen für ältere Häuser geeignet?", "Oft ja, wenn Estrich und Aufbau passen. Genau deshalb bleibt die technische Prüfung Bestandteil des Angebots."],
+      ["Wie wird die Wärme verteilt?", "Über mehrere Heizkreise und passende Verteiler je Ebene, damit die Wärme gleichmäßig und effizient ankommt."]
+    ]
   },
   "/fussbodenheizung-giessen": {
     city: "Gießen",
     title: "Fußbodenheizung fräsen in Gießen",
-    text: "Von der Wohnungsmodernisierung bis zum Einfamilienhaus: FloWarm liefert in Gießen eine klare Kalkulation, saubere Baustellenführung und schnelle Umsetzung."
+    text: "Von der Wohnungsmodernisierung bis zum Einfamilienhaus: FloWarm liefert in Gießen eine klare Kalkulation, saubere Baustellenführung und schnelle Umsetzung.",
+    intro: "In Gießen entstehen viele Modernisierungen im Bestand: Wohnungen werden saniert, Häuser energetisch verbessert und Gewerbeflächen neu genutzt. Eine eingefräste Fußbodenheizung bietet angenehme Strahlungswärme bei geringem Aufbau.",
+    districts: ["Innenstadt", "Wieseck", "Kleinlinden", "Lützellinden", "Rödgen", "Allendorf", "Petersweiher"],
+    localFocus: "Für Gießen planen wir den Ablauf so, dass Eigentümer schnell wissen, welche Kosten, Etappen und technischen Prüfungen anstehen. Das Sofortangebot gibt die erste klare Entscheidungsgrundlage.",
+    faq: [
+      ["Wie läuft ein Projekt in Gießen ab?", "Nach dem Sofortangebot prüfen wir technische Details, planen Heizkreise und stimmen den Termin ab. Die Umsetzung folgt dem 3-Tage-Ablauf."],
+      ["Brauche ich einen Grundriss?", "Ein Grundriss hilft, ist aber nicht zwingend. Alternativ können Maße manuell angegeben und später geprüft werden."],
+      ["Kann die Fußbodenheizung mit Wärmepumpe kombiniert werden?", "Grundsätzlich ja. Niedrige Systemtemperaturen sind ein großer Vorteil, die finale Auslegung muss technisch geprüft werden."]
+    ]
   }
 };
 
 export const defaultPrices = {
-  setup: 350,
-  milling: 35,
-  manifold: 500,
-  closing: 10,
-  leveling: 10
+  setup: 270,
+  milling: 27,
+  manifold: 600,
+  closing: 9,
+  leveling: 24
 };
 
-export const demoRequests = [
-  { id: "AG-2026-1872", name: "Mara Schneider", email: "mara@example.de", city: "Frankfurt", area: 118, status: "Angebot gesendet", gross: 16386.78 },
-  { id: "AG-2026-1873", name: "Emre Yilmaz", email: "emre@example.de", city: "Friedberg", area: 84, status: "Termin gebucht", gross: 12172.51 },
-  { id: "AG-2026-1874", name: "Julia Hahn", email: "julia@example.de", city: "Gießen", area: 156, status: "Neu", gross: 21044.44 }
-];

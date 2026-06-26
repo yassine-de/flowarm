@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { ArrowRight, CheckCircle2, ClipboardCheck, Gauge, Hammer, Heater, MapPin, ShieldCheck, Sparkles } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { ArrowRight, CheckCircle2, ClipboardCheck, Gauge, Hammer, Heater, MapPin, Medal, ShieldCheck, Sparkles, TrendingUp } from "lucide-react";
 import AdminDashboard from "./components/AdminDashboard";
 import AuthModal from "./components/AuthModal";
 import CookieBanner from "./components/CookieBanner";
@@ -8,6 +8,7 @@ import Layout from "./components/Layout";
 import QuizFunnel from "./components/QuizFunnel";
 import ScrollStory from "./components/ScrollStory";
 import { assets, cityPages, translations } from "./data/content";
+import { getCurrentUser } from "./lib/api";
 import CityLandingPage from "./pages/CityLandingPage";
 import LegalPage from "./pages/LegalPage";
 
@@ -17,8 +18,28 @@ export default function App() {
   const [authOpen, setAuthOpen] = useState(false);
   const [user, setUser] = useState(null);
   const t = translations[lang];
+
+  useEffect(() => {
+    const token = localStorage.getItem("flowarm-auth-token");
+    if (!token) return;
+    getCurrentUser(token)
+      .then((result) => setUser(result.user))
+      .catch(() => localStorage.removeItem("flowarm-auth-token"));
+  }, []);
   const go = (target) => {
+    if (target === "/") {
+      window.history.pushState({}, "", "/");
+      setPath("/");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
     if (target.startsWith("#")) {
+      if (path !== "/") {
+        window.history.pushState({}, "", "/");
+        setPath("/");
+        setTimeout(() => document.querySelector(target)?.scrollIntoView({ behavior: "smooth" }), 40);
+        return;
+      }
       document.querySelector(target)?.scrollIntoView({ behavior: "smooth" });
       return;
     }
@@ -35,7 +56,7 @@ export default function App() {
 
   const routed = useMemo(() => {
     if (cityPages[path]) return <CityLandingPage path={path} go={go} />;
-    if (["/impressum", "/datenschutz", "/agb"].includes(path)) return <LegalPage path={path} />;
+    if (["/impressum", "/datenschutz", "/agb", "/widerruf"].includes(path)) return <LegalPage path={path} />;
     return null;
   }, [path]);
 
@@ -47,18 +68,22 @@ export default function App() {
       go={go}
       user={user}
       onLogin={() => setAuthOpen(true)}
-      onLogout={() => setUser(null)}
+      onLogout={() => {
+        localStorage.removeItem("flowarm-auth-token");
+        setUser(null);
+      }}
     >
       {routed || (
         <main>
           {user ? (
             <section id="dashboard" className="pt-20">
-              {user.role === "admin" ? <AdminDashboard authenticated /> : <CustomerDashboard authenticated />}
+              {user.role === "admin" ? <AdminDashboard authenticated /> : <CustomerDashboard authenticated user={user} />}
             </section>
           ) : (
             <>
               <ScrollStory t={t} go={go} />
               <StickyCta go={go} />
+              <MarketLeaderSection go={go} />
               <TrustSection go={go} />
               <ServiceDetailsSection />
               <QuizFunnel t={t} />
@@ -70,7 +95,7 @@ export default function App() {
         </main>
       )}
       <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} onAuthenticated={setUser} />
-      <CookieBanner />
+      <CookieBanner go={go} />
     </Layout>
   );
 }
@@ -80,6 +105,59 @@ function StickyCta({ go }) {
     <button onClick={() => go("#angebot")} className="fixed bottom-5 right-5 z-40 hidden rounded-full bg-warm px-5 py-3 text-sm font-bold text-ink shadow-glow md:block">
       Angebot berechnen
     </button>
+  );
+}
+
+function MarketLeaderSection({ go }) {
+  const stats = [
+    ["7.256+", "umgesetzte Projekte", "Sanierung, Neubau und Gewerbeflächen"],
+    ["4", "Projekte werden heute fertig", "laufende Teams im 3-Tage-Ablauf"],
+    ["3 Tage", "typische Umsetzung", "Fräsen, Rohrverlegung, Anschlussvorbereitung"],
+    ["98 %", "Angebote mit Sofortpreis", "klare Kalkulation vor dem ersten Termin"]
+  ];
+
+  return (
+    <section className="bg-black px-4 py-16 sm:px-6">
+      <div className="mx-auto max-w-7xl">
+        <div className="grid gap-8 lg:grid-cols-[.9fr_1.1fr] lg:items-end">
+          <div>
+            <p className="inline-flex items-center gap-2 rounded-full border border-warm/25 bg-warm/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.22em] text-warm">
+              <Medal size={16} /> Marktführer-Anspruch
+            </p>
+            <h2 className="mt-5 max-w-3xl text-4xl font-semibold tracking-tight sm:text-5xl">
+              Einer der führenden Spezialisten für Fußbodenheizung-Fräsen in Deutschland.
+            </h2>
+            <p className="mt-5 max-w-2xl text-lg leading-8 text-white/62">
+              FloWarm verbindet eingespielte Montageteams, transparente Sofortpreise und einen klaren 3-Tage-Prozess. Genau deshalb entscheiden sich Eigentümer und Sanierer für eine schnelle, saubere Umsetzung.
+            </p>
+          </div>
+          <div className="rounded-lg border border-warm/20 bg-gradient-to-br from-white/[.08] to-white/[.03] p-5">
+            <div className="mb-5 flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm text-white/45">Live-Projektstatus</p>
+                <p className="mt-1 font-semibold text-white">Heute in Umsetzung</p>
+              </div>
+              <TrendingUp className="text-warm" />
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {stats.map(([value, label, note]) => (
+                <div key={label} className="rounded-md border border-white/10 bg-black/35 p-4">
+                  <p className="text-3xl font-semibold text-white">{value}</p>
+                  <p className="mt-2 font-semibold text-warm">{label}</p>
+                  <p className="mt-1 text-sm leading-5 text-white/50">{note}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div className="mt-8 flex flex-wrap items-center gap-3">
+          <button onClick={() => go("#angebot")} className="rounded-full bg-warm px-6 py-4 font-bold text-ink shadow-glow">
+            Sofortangebot berechnen
+          </button>
+          <span className="text-sm text-white/45">Vorläufiger Festpreis in ca. 2 Minuten.</span>
+        </div>
+      </div>
+    </section>
   );
 }
 

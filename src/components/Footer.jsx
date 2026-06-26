@@ -13,7 +13,8 @@ export default function Footer({ go }) {
         <div className="space-y-3 text-sm text-white/70">
           <button onClick={() => go("/impressum")}>Impressum</button><br />
           <button onClick={() => go("/datenschutz")}>Datenschutz</button><br />
-          <button onClick={() => go("/agb")}>AGB</button>
+          <button onClick={() => go("/agb")}>AGB</button><br />
+          <button onClick={() => go("/widerruf")}>Widerruf</button>
         </div>
         <div className="space-y-3 text-sm text-white/70">
           <button onClick={() => go("/fussbodenheizung-frankfurt")}>Frankfurt</button><br />

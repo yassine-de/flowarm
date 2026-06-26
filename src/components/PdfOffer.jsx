@@ -1,11 +1,11 @@
 import { Download, Mail } from "lucide-react";
 import { useMemo } from "react";
-import { createOfferPdf } from "../lib/pdf";
 import { assets } from "../data/content";
 
 export default function PdfOffer({ form, offer }) {
   const offerNo = useMemo(() => `AG-${new Date().getFullYear()}-${Math.floor(1800 + Math.random() * 800)}`, []);
   const download = async () => {
+    const { createOfferPdf } = await import("../lib/pdf");
     const logo = await imageToDataUrl(assets.logo);
     const doc = createOfferPdf({ form, offer, offerNo, logo });
     doc.save(`${offerNo}-FloWarm-Angebot.pdf`);
@@ -15,8 +15,8 @@ export default function PdfOffer({ form, offer }) {
       <button onClick={download} className="flex items-center justify-center gap-2 rounded-md bg-warm px-5 py-4 font-bold text-ink">
         <Download size={18} /> PDF-Angebot erstellen
       </button>
-      <button className="flex items-center justify-center gap-2 rounded-md border border-white/18 px-5 py-4 font-semibold text-white/80">
-        <Mail size={18} /> Demo: per E-Mail senden
+      <button className="flex items-center justify-center gap-2 rounded-md border border-white/18 px-5 py-4 font-semibold text-white/80" type="button">
+        <Mail size={18} /> Angebot per E-Mail erhalten
       </button>
     </div>
   );

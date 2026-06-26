@@ -6,13 +6,12 @@ import Logo from "./Logo";
 export default function Navbar({ t, lang, setLang, go, user, onLogin, onLogout }) {
   const [open, setOpen] = useState(false);
   const links = [
-    ["#angebot", t.nav.offer],
     ["#regionen", t.nav.cities]
   ];
   return (
     <header className="fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-ink/70 backdrop-blur-2xl">
       <nav className="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 sm:px-6">
-        <button onClick={() => go("#top")} aria-label="FloWarm Startseite">
+        <button onClick={() => go("/")} aria-label="FloWarm Startseite">
           <Logo />
         </button>
         <div className="hidden items-center gap-7 md:flex">

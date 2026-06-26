@@ -1,17 +1,40 @@
-import { BarChart3, Calendar, Download, Settings, ShieldCheck, Users } from "lucide-react";
-import { demoRequests, defaultPrices } from "../data/content";
+import { Calendar, Download, Settings, ShieldCheck } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { defaultPrices } from "../data/content";
+import { listAdminOffers } from "../lib/api";
 import { currency } from "../lib/pricing";
-import Login from "./Login";
 
 export default function AdminDashboard({ authenticated = false }) {
+  const [offers, setOffers] = useState([]);
+  const [state, setState] = useState("loading");
   const pages = ["Dashboard", "Anfragen/Aufträge", "Kunden", "Angebote", "Kalender", "Preiseinstellungen", "Kommunikation", "Export", "Einstellungen"];
-  const stats = [
-    ["Anfragen diese Woche", "18"],
-    ["Anfragen diesen Monat", "74"],
-    ["Conversion Angebot → Termin", "42 %"],
-    ["Umsatzübersicht", "132.800 €"],
-    ["Beliebteste Stadt", "Frankfurt"]
-  ];
+  const stats = useMemo(() => {
+    const revenue = offers.reduce((sum, item) => sum + Number(item.totals?.gross || 0), 0);
+    const cities = offers.map((item) => item.project?.zipCity || "").filter(Boolean);
+    const popularCity = cities[0] || "Noch offen";
+    return [
+      ["Anfragen gesamt", String(offers.length)],
+      ["Neue Anfragen", String(offers.filter((item) => item.status === "Neu").length)],
+      ["Conversion Angebot → Termin", "nach Tracking"],
+      ["Umsatzübersicht", currency(revenue)],
+      ["Beliebteste Stadt", popularCity]
+    ];
+  }, [offers]);
+
+  useEffect(() => {
+    const token = localStorage.getItem("flowarm-auth-token");
+    if (!token) {
+      setState("error");
+      return;
+    }
+    listAdminOffers(token)
+      .then((data) => {
+        setOffers(data);
+        setState("ready");
+      })
+      .catch(() => setState("error"));
+  }, []);
+
   return (
     <section id="admin" className="bg-black px-4 py-20 sm:px-6">
       <div className="mx-auto max-w-7xl">
@@ -27,7 +50,6 @@ export default function AdminDashboard({ authenticated = false }) {
         </div>
         <div className="grid gap-8 lg:grid-cols-[270px_1fr]">
           <div className="space-y-5">
-            {!authenticated && <Login title="Admin-Login" note="Rollen: Admin mit Vollzugriff, Sachbearbeiter ohne Preiseinstellungen." />}
             <div className="rounded-lg border border-white/10 bg-white/[.04] p-4">
               {pages.map((page) => <button key={page} className="block w-full rounded-md px-3 py-2 text-left text-sm text-white/68 hover:bg-white/7 hover:text-white">{page}</button>)}
             </div>
@@ -48,13 +70,20 @@ export default function AdminDashboard({ authenticated = false }) {
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[720px] text-left text-sm">
-                  <thead className="text-white/45"><tr><th className="py-3">Nr.</th><th>Kunde</th><th>Stadt</th><th>Status</th><th>Brutto</th><th>Hinweis</th></tr></thead>
+                  <thead className="text-white/45"><tr><th className="py-3">Nr.</th><th>Kunde</th><th>Stadt</th><th>Status</th><th>Brutto</th><th>Kontakt</th></tr></thead>
                   <tbody>
-                    {demoRequests.map((row, index) => (
+                    {offers.map((row) => (
                       <tr key={row.id} className="border-t border-white/8">
-                        <td className="py-4">{row.id}</td><td>{row.name}</td><td>{row.city}</td><td><span className="rounded-full bg-warm/15 px-3 py-1 text-warm">{row.status}</span></td><td>{currency(row.gross)}</td><td>{index === 1 ? "Duplikat-Warnung: E-Mail prüfen" : "Interne Notiz möglich"}</td>
+                        <td className="py-4">{row.offerNo}</td><td>{row.project?.name || "-"}</td><td>{row.project?.zipCity || "-"}</td><td><span className="rounded-full bg-warm/15 px-3 py-1 text-warm">{row.status}</span></td><td>{currency(row.totals?.gross)}</td><td>{row.project?.email || row.project?.phone || "-"}</td>
                       </tr>
                     ))}
+                    {state !== "ready" || offers.length === 0 ? (
+                      <tr className="border-t border-white/8">
+                        <td colSpan="6" className="py-8 text-center text-white/50">
+                          {state === "loading" ? "Anfragen werden geladen..." : "Noch keine Anfragen vorhanden oder Admin-API nicht erreichbar."}
+                        </td>
+                      </tr>
+                    ) : null}
                   </tbody>
                 </table>
               </div>

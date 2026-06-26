@@ -2,6 +2,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft, ArrowRight, Building2, CalendarCheck, Factory, Home, House, MapPinned, PhoneCall, Ruler, Upload } from "lucide-react";
 import { useMemo, useState } from "react";
 import { defaultPrices } from "../data/content";
+import { submitOfferLead } from "../lib/api";
 import { calculateOffer } from "../lib/pricing";
 import PdfOffer from "./PdfOffer";
 import PriceCalculator from "./PriceCalculator";
@@ -12,12 +13,12 @@ const initial = {
   area: 120,
   floors: "1",
   plan: "Ja, Grundriss hochladen",
+  leveling: "Nein, nur Rohrkanäle verschließen",
   zipCity: "",
   timeframe: "1-3 Monate",
   name: "",
   email: "",
-  phone: "",
-  password: ""
+  phone: ""
 };
 
 const choiceDetails = {
@@ -32,6 +33,8 @@ const choiceDetails = {
   "3+": ["Drei oder mehr Ebenen", Building2],
   "Ja, Grundriss hochladen": ["PDF, Foto oder Plan später ergänzen", Upload],
   "Nein, Maße manuell eingeben": ["Wir führen Sie durch die Maße", Ruler],
+  "Nein, nur Rohrkanäle verschließen": ["Für robuste Folgeaufbauten, wenn der Bodenleger den finalen Ausgleich übernimmt", Ruler],
+  "Ja, Ausgleichsmasse anbieten": ["Empfohlen bei Belägen wie Vinyl, Laminat oder Designboden, wenn eine besonders ebene Fläche benötigt wird", Ruler],
   Sofort: ["Schnellstmögliche Umsetzung", CalendarCheck],
   "1-3 Monate": ["Konkrete Planung in Kürze", CalendarCheck],
   "3-6 Monate": ["Mittelfristiges Projekt", CalendarCheck],
@@ -54,6 +57,9 @@ function Choice({ active, children, onClick }) {
 export default function QuizFunnel({ t }) {
   const [step, setStep] = useState(0);
   const [form, setForm] = useState(initial);
+  const [submitState, setSubmitState] = useState("idle");
+  const [submittedOffer, setSubmittedOffer] = useState(null);
+  const [consent, setConsent] = useState(false);
   const offer = useMemo(() => calculateOffer(form, defaultPrices), [form]);
   const set = (key, value) => setForm((current) => ({ ...current, [key]: value }));
   const inputClass = "rounded-md border border-ink/12 bg-[#fff8ed] px-4 py-4 text-ink shadow-inner shadow-black/5 outline-none transition placeholder:text-ink/38 focus:border-warm focus:bg-white focus:ring-4 focus:ring-warm/15";
@@ -63,12 +69,30 @@ export default function QuizFunnel({ t }) {
     { title: "Fläche", custom: "area" },
     { title: "Stockwerke", field: "floors", choices: ["1", "2", "3+"] },
     { title: "Grundriss vorhanden?", field: "plan", choices: ["Ja, Grundriss hochladen", "Nein, Maße manuell eingeben"] },
+    { title: "Ausgleichsmasse gewünscht?", field: "leveling", choices: ["Nein, nur Rohrkanäle verschließen", "Ja, Ausgleichsmasse anbieten"] },
     { title: "Stadt / PLZ", custom: "zipCity" },
     { title: "Zeitraum", field: "timeframe", choices: ["Sofort", "1-3 Monate", "3-6 Monate", "Noch offen"] },
     { title: "Kontaktdaten", custom: "contact" },
     { title: "Preisübersicht", custom: "price" }
   ];
   const current = steps[step];
+  const canContinue = step !== 8 || (form.name.trim() && form.email.trim() && form.phone.trim() && consent);
+
+  const submitLead = async () => {
+    setSubmitState("submitting");
+    try {
+      const result = await submitOfferLead({
+        form,
+        offer,
+        source: "flowarm-website",
+        submittedAt: new Date().toISOString()
+      });
+      setSubmittedOffer(result);
+      setSubmitState("success");
+    } catch {
+      setSubmitState("error");
+    }
+  };
 
   return (
     <section id="angebot" className="bg-pearl px-4 py-20 text-ink sm:px-6">
@@ -79,7 +103,7 @@ export default function QuizFunnel({ t }) {
             <h2 className="mt-3 text-4xl font-semibold tracking-tight sm:text-5xl">{t.funnelTitle}</h2>
           </div>
           <div className="w-full max-w-sm">
-            <div className="mb-2 flex justify-between text-xs font-semibold text-ink/45"><span>Fortschritt</span><span>{step + 1}/9</span></div>
+            <div className="mb-2 flex justify-between text-xs font-semibold text-ink/45"><span>Fortschritt</span><span>{step + 1}/{steps.length}</span></div>
             <div className="h-2 overflow-hidden rounded-full bg-ink/10"><div className="h-full bg-warm transition-all" style={{ width: `${((step + 1) / steps.length) * 100}%` }} /></div>
           </div>
         </div>
@@ -119,15 +143,37 @@ export default function QuizFunnel({ t }) {
                     <input value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="Name" className={inputClass} />
                     <input value={form.email} onChange={(e) => set("email", e.target.value)} placeholder="E-Mail" className={inputClass} />
                     <input value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="Telefon" className={inputClass} />
-                    <input value={form.password} onChange={(e) => set("password", e.target.value)} placeholder="Passwort" type="password" className={inputClass} />
+                    <label className="flex items-start gap-3 rounded-md border border-ink/10 bg-[#fff8ed] p-4 text-sm leading-6 text-ink/62 sm:col-span-2">
+                      <input checked={consent} onChange={(event) => setConsent(event.target.checked)} type="checkbox" className="mt-1 accent-warm" />
+                      <span>
+                        Ich habe die <a href="/datenschutz" className="font-semibold text-warm underline decoration-warm/40 underline-offset-4">Datenschutzerklaerung</a> gelesen und bin einverstanden, dass FloWarm meine Angaben zur Angebotserstellung und Kontaktaufnahme per E-Mail oder Telefon verarbeitet.
+                      </span>
+                    </label>
+                    {!canContinue && (
+                      <p className="text-sm text-ink/50 sm:col-span-2">Bitte Name, E-Mail, Telefon und Kontakt-Einwilligung ausfüllen.</p>
+                    )}
                   </div>
                 )}
                 {current.custom === "price" && (
                   <div className="mt-7 space-y-5">
+                    {submitState === "success" && (
+                      <div className="rounded-lg border border-green-500/30 bg-green-50 p-5 text-green-900">
+                        <p className="font-semibold">Ihre Anfrage wurde übermittelt.</p>
+                        <p className="mt-2 text-sm">Angebotsnummer: {submittedOffer?.offerNo || submittedOffer?.id || "wird zugewiesen"}. Wir melden uns zur technischen Prüfung.</p>
+                      </div>
+                    )}
+                    {submitState === "error" && (
+                      <div className="rounded-lg border border-red-500/30 bg-red-50 p-5 text-red-900">
+                        <p className="font-semibold">Die Anfrage konnte nicht gesendet werden.</p>
+                        <p className="mt-2 text-sm">Bitte prüfen Sie die Server-/Netlify-Konfiguration oder kontaktieren Sie FloWarm direkt telefonisch.</p>
+                      </div>
+                    )}
                     <PriceCalculator offer={offer} hint={t.legalHint} />
                     <PdfOffer form={form} offer={offer} />
                     <div className="grid gap-3 sm:grid-cols-2">
-                      <button className="flex items-center justify-center gap-2 rounded-md bg-ink px-5 py-4 font-semibold text-white"><CalendarCheck size={18} /> Termin vereinbaren</button>
+                      <button onClick={submitLead} disabled={submitState === "submitting" || submitState === "success"} className="flex items-center justify-center gap-2 rounded-md bg-ink px-5 py-4 font-semibold text-white disabled:opacity-50">
+                        <CalendarCheck size={18} /> {submitState === "submitting" ? "Wird gesendet..." : "Anfrage absenden"}
+                      </button>
                       <button className="flex items-center justify-center gap-2 rounded-md border border-ink/15 px-5 py-4 font-semibold"><PhoneCall size={18} /> Rückruf anfordern</button>
                     </div>
                   </div>
@@ -138,7 +184,7 @@ export default function QuizFunnel({ t }) {
               <button disabled={step === 0} onClick={() => setStep(step - 1)} className="flex items-center gap-2 rounded-full px-4 py-3 text-sm font-semibold text-ink/60 disabled:opacity-25">
                 <ArrowLeft size={17} /> Zurück
               </button>
-              <button disabled={step === steps.length - 1} onClick={() => setStep(step + 1)} className="flex items-center gap-2 rounded-full bg-ink px-5 py-3 text-sm font-bold text-white disabled:opacity-25">
+              <button disabled={step === steps.length - 1 || !canContinue} onClick={() => setStep(step + 1)} className="flex items-center gap-2 rounded-full bg-ink px-5 py-3 text-sm font-bold text-white disabled:opacity-25">
                 Weiter <ArrowRight size={17} />
               </button>
             </div>
