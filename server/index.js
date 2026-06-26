@@ -176,7 +176,7 @@ async function notifyLead({ offerNo, form, offer }) {
     disableUrlAccess: true
   });
   await transporter.sendMail({
-    from: process.env.MAIL_FROM || "FloWarm <angebote@flowarm.de>",
+    from: process.env.MAIL_FROM || "FloWarm <info@flowarm.de>",
     to: process.env.LEAD_NOTIFICATION_TO,
     replyTo: form.email,
     subject: `Neue FloWarm Anfrage ${offerNo}`,
@@ -213,6 +213,12 @@ function validPassword(password) {
   return String(password || "").length >= 8;
 }
 
-app.listen(port, () => {
-  console.log(`FloWarm API running on http://127.0.0.1:${port}`);
-});
+const shouldListen = !process.env.NETLIFY && !process.env.AWS_LAMBDA_FUNCTION_NAME;
+
+if (shouldListen) {
+  app.listen(port, () => {
+    console.log(`FloWarm API running on http://127.0.0.1:${port}`);
+  });
+}
+
+export default app;
