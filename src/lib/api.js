@@ -10,6 +10,22 @@ export async function submitOfferLead(payload) {
   return response.json();
 }
 
+export async function savePartialOfferLead(payload) {
+  const response = await fetch(`${apiBase}/api/offers/partial`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+  if (!response.ok) throw new Error("partial_offer_submit_failed");
+  return response.json();
+}
+
+export async function getPriceSettings() {
+  const response = await fetch(`${apiBase}/api/prices`);
+  if (!response.ok) throw new Error("prices_load_failed");
+  return response.json();
+}
+
 export async function loginUser(credentials) {
   const response = await fetch(`${apiBase}/api/auth/login`, {
     method: "POST",
@@ -43,5 +59,15 @@ export async function listAdminOffers(token) {
     headers: { Authorization: `Bearer ${token}` }
   });
   if (!response.ok) throw new Error("admin_offers_failed");
+  return response.json();
+}
+
+export async function updateAdminPrices(token, prices) {
+  const response = await fetch(`${apiBase}/api/admin/prices`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify(prices)
+  });
+  if (!response.ok) throw new Error("admin_prices_update_failed");
   return response.json();
 }

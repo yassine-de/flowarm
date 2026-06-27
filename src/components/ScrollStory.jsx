@@ -1,12 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { gsap } from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { ChevronDown } from "lucide-react";
 import { motion } from "framer-motion";
 import { assets } from "../data/content";
 import SceneSection from "./SceneSection";
-
-gsap.registerPlugin(ScrollTrigger);
 
 export default function ScrollStory({ t, go }) {
   const wrap = useRef(null);
@@ -15,15 +11,22 @@ export default function ScrollStory({ t, go }) {
   useEffect(() => {
     const reduce = window.matchMedia("(max-width: 767px), (prefers-reduced-motion: reduce)").matches;
     if (reduce || !wrap.current) return;
-    const trigger = ScrollTrigger.create({
-      trigger: wrap.current,
-      start: "top top",
-      end: `+=${t.story.length * 360}`,
-      pin: true,
-      scrub: 0.35,
-      onUpdate: (self) => setActive(Math.min(t.story.length - 1, Math.floor(self.progress * t.story.length)))
-    });
-    return () => trigger.kill();
+
+    const updateActiveScene = () => {
+      const rect = wrap.current?.getBoundingClientRect();
+      if (!rect) return;
+      const viewport = window.innerHeight || 1;
+      const progress = Math.min(1, Math.max(0, (viewport - rect.top) / (viewport + rect.height)));
+      setActive(Math.min(t.story.length - 1, Math.floor(progress * t.story.length)));
+    };
+
+    updateActiveScene();
+    window.addEventListener("scroll", updateActiveScene, { passive: true });
+    window.addEventListener("resize", updateActiveScene);
+    return () => {
+      window.removeEventListener("scroll", updateActiveScene);
+      window.removeEventListener("resize", updateActiveScene);
+    };
   }, [t.story.length]);
 
   return (

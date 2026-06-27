@@ -23,7 +23,13 @@ export default function App() {
     const token = localStorage.getItem("flowarm-auth-token");
     if (!token) return;
     getCurrentUser(token)
-      .then((result) => setUser(result.user))
+      .then((result) => {
+        setUser(result.user);
+        if (window.location.pathname !== "/") {
+          window.history.replaceState({}, "", "/");
+          setPath("/");
+        }
+      })
       .catch(() => localStorage.removeItem("flowarm-auth-token"));
   }, []);
   const go = (target) => {
@@ -60,6 +66,13 @@ export default function App() {
     return null;
   }, [path]);
 
+  const handleAuthenticated = (authenticatedUser) => {
+    setUser(authenticatedUser);
+    window.history.pushState({}, "", "/");
+    setPath("/");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   return (
     <Layout
       t={t}
@@ -73,28 +86,26 @@ export default function App() {
         setUser(null);
       }}
     >
-      {routed || (
+      {user ? (
         <main>
-          {user ? (
-            <section id="dashboard" className="pt-20">
-              {user.role === "admin" ? <AdminDashboard authenticated /> : <CustomerDashboard authenticated user={user} />}
-            </section>
-          ) : (
-            <>
-              <ScrollStory t={t} go={go} />
-              <StickyCta go={go} />
-              <MarketLeaderSection go={go} />
-              <TrustSection go={go} />
-              <ServiceDetailsSection />
-              <QuizFunnel t={t} />
-              <ProcessSection />
-              <FaqSection go={go} />
-              <RegionSection go={go} />
-            </>
-          )}
+          <section id="dashboard" className="pt-20">
+            {user.role === "admin" ? <AdminDashboard authenticated /> : <CustomerDashboard authenticated user={user} />}
+          </section>
+        </main>
+      ) : routed || (
+        <main>
+          <ScrollStory t={t} go={go} />
+          <StickyCta go={go} />
+          <MarketLeaderSection go={go} />
+          <TrustSection go={go} />
+          <ServiceDetailsSection />
+          <QuizFunnel t={t} />
+          <ProcessSection />
+          <FaqSection go={go} />
+          <RegionSection go={go} />
         </main>
       )}
-      <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} onAuthenticated={setUser} />
+      <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} onAuthenticated={handleAuthenticated} />
       <CookieBanner go={go} />
     </Layout>
   );

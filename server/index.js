@@ -11,8 +11,12 @@ const app = express();
 const port = process.env.PORT || 8787;
 const isProduction = process.env.NODE_ENV === "production";
 const jwtSecret = process.env.JWT_SECRET;
-const pool = process.env.DATABASE_URL ? new pg.Pool({ connectionString: process.env.DATABASE_URL }) : null;
-const memory = { users: [], offers: [] };
+const databaseUrl = process.env.DATABASE_URL;
+const databaseNeedsSsl = databaseUrl && !/localhost|127\.0\.0\.1/i.test(databaseUrl);
+const pool = databaseUrl ? new pg.Pool({ connectionString: databaseUrl, ssl: databaseNeedsSsl ? { rejectUnauthorized: false } : false }) : null;
+const defaultPriceSettings = { setup: 270, milling: 27, manifold: 600, closing: 9, leveling: 24 };
+const memory = { users: [], offers: [], priceSettings: { ...defaultPriceSettings, updatedAt: new Date().toISOString() } };
+const offerStatuses = ["Unvollständig", "Neu", "Angebot gesendet", "Termin gebucht", "Bestätigt", "In Bearbeitung", "Abgeschlossen"];
 
 if (isProduction && !jwtSecret) {
   throw new Error("JWT_SECRET is required in production");
@@ -25,6 +29,10 @@ await bootstrapAdmin();
 
 app.get("/api/health", (_req, res) => {
   res.json({ ok: true, service: "flowarm-api", database: Boolean(pool) });
+});
+
+app.get("/api/prices", async (_req, res) => {
+  res.json(await getPriceSettings());
 });
 
 app.post("/api/auth/register", async (req, res) => {
@@ -53,10 +61,8 @@ app.get("/api/auth/me", requireAuth, async (req, res) => {
 app.post("/api/offers", async (req, res) => {
   const { form, offer, source } = req.body;
   if (!form || !offer || !validEmail(form.email) || !form.name || !form.phone) return res.status(400).json({ error: "invalid_payload" });
-  const offerNo = await nextOfferNo();
-  const saved = await saveOffer({
-    offerNo,
-    status: "Neu",
+  const saved = await saveCompletedOffer({
+    offerNo: await nextOfferNo(),
     project: { ...form, password: undefined, source },
     prices: offer.positions,
     totals: { net: offer.net, vat: offer.vat, gross: offer.gross }
@@ -65,13 +71,35 @@ app.post("/api/offers", async (req, res) => {
   res.json(saved);
 });
 
+app.post("/api/offers/partial", async (req, res) => {
+  const { form, offer, source, lastStep } = req.body;
+  if (!form || !hasUsableContact(form)) return res.status(400).json({ error: "invalid_payload" });
+  const saved = await savePartialOffer({
+    offerNo: await nextOfferNo(),
+    project: { ...form, password: undefined, source, lastStep, partial: true },
+    prices: offer?.positions || [],
+    totals: { net: Number(offer?.net || 0), vat: Number(offer?.vat || 0), gross: Number(offer?.gross || 0) }
+  });
+  res.json(saved);
+});
+
 app.get("/api/admin/offers", requireAuth, requireRole("admin", "staff"), async (_req, res) => {
   res.json(await listOffers());
 });
 
+app.get("/api/admin/prices", requireAuth, requireRole("admin", "staff"), async (_req, res) => {
+  res.json(await getPriceSettings());
+});
+
+app.put("/api/admin/prices", requireAuth, requireRole("admin", "staff"), async (req, res) => {
+  const prices = sanitizePriceSettings(req.body);
+  if (!prices) return res.status(400).json({ error: "invalid_payload" });
+  res.json(await updatePriceSettings(prices));
+});
+
 app.patch("/api/admin/offers/:id/status", requireAuth, requireRole("admin", "staff"), async (req, res) => {
   const status = String(req.body.status || "");
-  if (!["Neu", "Angebot gesendet", "Termin gebucht", "Bestätigt", "In Bearbeitung", "Abgeschlossen"].includes(status)) {
+  if (!offerStatuses.includes(status)) {
     return res.status(400).json({ error: "invalid_status" });
   }
   res.json(await updateOfferStatus(req.params.id, status));
@@ -144,12 +172,142 @@ async function saveOffer({ offerNo, status, project, prices, totals }) {
   return offer;
 }
 
+async function saveCompletedOffer({ offerNo, project, prices, totals }) {
+  const email = String(project.email || "").toLowerCase();
+  const phone = String(project.phone || "");
+  if (pool) {
+    const existing = await pool.query(
+      `select id from offers
+       where status = 'Unvollständig'
+       and (($1 <> '' and lower(project->>'email') = $1) or ($2 <> '' and project->>'phone' = $2))
+       order by created_at desc
+       limit 1`,
+      [email, phone]
+    );
+    if (existing.rows[0]) {
+      const result = await pool.query(
+        `update offers
+         set status = 'Neu', project = $2, prices = $3, totals = $4
+         where id = $1
+         returning id, offer_no as "offerNo", status, project, totals, created_at as "createdAt"`,
+        [existing.rows[0].id, project, prices, totals]
+      );
+      return result.rows[0];
+    }
+  } else {
+    const existing = memory.offers.find((item) => (
+      item.status === "Unvollständig" &&
+      ((email && String(item.project?.email || "").toLowerCase() === email) || (phone && item.project?.phone === phone))
+    ));
+    if (existing) {
+      existing.status = "Neu";
+      existing.project = project;
+      existing.prices = prices;
+      existing.totals = totals;
+      return existing;
+    }
+  }
+  return saveOffer({ offerNo, status: "Neu", project, prices, totals });
+}
+
+async function savePartialOffer({ offerNo, project, prices, totals }) {
+  const email = String(project.email || "").toLowerCase();
+  const phone = String(project.phone || "");
+  if (pool) {
+    const existing = await pool.query(
+      `select id from offers
+       where status = 'Unvollständig'
+       and (($1 <> '' and lower(project->>'email') = $1) or ($2 <> '' and project->>'phone' = $2))
+       order by created_at desc
+       limit 1`,
+      [email, phone]
+    );
+    if (existing.rows[0]) {
+      const result = await pool.query(
+        `update offers
+         set project = $2, prices = $3, totals = $4
+         where id = $1
+         returning id, offer_no as "offerNo", status, project, totals, created_at as "createdAt"`,
+        [existing.rows[0].id, project, prices, totals]
+      );
+      return result.rows[0];
+    }
+  } else {
+    const existing = memory.offers.find((item) => (
+      item.status === "Unvollständig" &&
+      ((email && String(item.project?.email || "").toLowerCase() === email) || (phone && item.project?.phone === phone))
+    ));
+    if (existing) {
+      existing.project = project;
+      existing.prices = prices;
+      existing.totals = totals;
+      return existing;
+    }
+  }
+  return saveOffer({ offerNo, status: "Unvollständig", project, prices, totals });
+}
+
 async function listOffers() {
   if (pool) {
     const result = await pool.query("select id, offer_no as \"offerNo\", status, project, totals, created_at as \"createdAt\" from offers order by created_at desc limit 250");
     return result.rows;
   }
   return memory.offers;
+}
+
+async function getPriceSettings() {
+  if (pool) {
+    await ensurePriceSettingsTable();
+    await pool.query(
+      `insert into price_settings (id, setup, milling, manifold, closing, leveling)
+       values (1, $1, $2, $3, $4, $5)
+       on conflict (id) do nothing`,
+      [defaultPriceSettings.setup, defaultPriceSettings.milling, defaultPriceSettings.manifold, defaultPriceSettings.closing, defaultPriceSettings.leveling]
+    );
+    const result = await pool.query(
+      `select setup::float, milling::float, manifold::float, closing::float, leveling::float, updated_at as "updatedAt"
+       from price_settings
+       where id = 1`
+    );
+    return result.rows[0];
+  }
+  return memory.priceSettings;
+}
+
+async function updatePriceSettings(prices) {
+  if (pool) {
+    await ensurePriceSettingsTable();
+    const result = await pool.query(
+      `insert into price_settings (id, setup, milling, manifold, closing, leveling)
+       values (1, $1, $2, $3, $4, $5)
+       on conflict (id) do update set
+         setup = excluded.setup,
+         milling = excluded.milling,
+         manifold = excluded.manifold,
+         closing = excluded.closing,
+         leveling = excluded.leveling,
+         updated_at = now()
+       returning setup::float, milling::float, manifold::float, closing::float, leveling::float, updated_at as "updatedAt"`,
+      [prices.setup, prices.milling, prices.manifold, prices.closing, prices.leveling]
+    );
+    return result.rows[0];
+  }
+  memory.priceSettings = { ...prices, updatedAt: new Date().toISOString() };
+  return memory.priceSettings;
+}
+
+async function ensurePriceSettingsTable() {
+  await pool.query(`
+    create table if not exists price_settings (
+      id int primary key default 1,
+      setup numeric not null,
+      milling numeric not null,
+      manifold numeric not null,
+      closing numeric not null,
+      leveling numeric not null,
+      updated_at timestamptz not null default now()
+    )
+  `);
 }
 
 async function updateOfferStatus(id, status) {
@@ -211,6 +369,24 @@ function validEmail(email) {
 
 function validPassword(password) {
   return String(password || "").length >= 8;
+}
+
+function hasUsableContact(form) {
+  const email = String(form.email || "");
+  const phone = String(form.phone || "").replace(/\D/g, "");
+  return validEmail(email) || phone.length >= 5;
+}
+
+function sanitizePriceSettings(body) {
+  const candidate = {
+    setup: Number(body?.setup),
+    milling: Number(body?.milling),
+    manifold: Number(body?.manifold),
+    closing: Number(body?.closing),
+    leveling: Number(body?.leveling)
+  };
+  const valid = Object.values(candidate).every((value) => Number.isFinite(value) && value >= 0 && value < 100000);
+  return valid ? candidate : null;
 }
 
 const shouldListen = !process.env.NETLIFY && !process.env.AWS_LAMBDA_FUNCTION_NAME;

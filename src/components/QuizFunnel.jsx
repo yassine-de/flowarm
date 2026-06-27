@@ -1,8 +1,8 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft, ArrowRight, Building2, CalendarCheck, Factory, Home, House, MapPinned, PhoneCall, Ruler, Upload } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { defaultPrices } from "../data/content";
-import { submitOfferLead } from "../lib/api";
+import { getPriceSettings, savePartialOfferLead, submitOfferLead } from "../lib/api";
 import { calculateOffer } from "../lib/pricing";
 import PdfOffer from "./PdfOffer";
 import PriceCalculator from "./PriceCalculator";
@@ -57,10 +57,13 @@ function Choice({ active, children, onClick }) {
 export default function QuizFunnel({ t }) {
   const [step, setStep] = useState(0);
   const [form, setForm] = useState(initial);
+  const [prices, setPrices] = useState(defaultPrices);
   const [submitState, setSubmitState] = useState("idle");
   const [submittedOffer, setSubmittedOffer] = useState(null);
   const [consent, setConsent] = useState(false);
-  const offer = useMemo(() => calculateOffer(form, defaultPrices), [form]);
+  const partialTimer = useRef(null);
+  const lastPartialPayload = useRef("");
+  const offer = useMemo(() => calculateOffer(form, prices), [form, prices]);
   const set = (key, value) => setForm((current) => ({ ...current, [key]: value }));
   const inputClass = "rounded-md border border-ink/12 bg-[#fff8ed] px-4 py-4 text-ink shadow-inner shadow-black/5 outline-none transition placeholder:text-ink/38 focus:border-warm focus:bg-white focus:ring-4 focus:ring-warm/15";
   const steps = [
@@ -77,6 +80,33 @@ export default function QuizFunnel({ t }) {
   ];
   const current = steps[step];
   const canContinue = step !== 8 || (form.name.trim() && form.email.trim() && form.phone.trim() && consent);
+
+  useEffect(() => {
+    getPriceSettings().then(setPrices).catch(() => setPrices(defaultPrices));
+  }, []);
+
+  useEffect(() => {
+    if (submitState === "success" || !consent || step < 8) return;
+    const hasContact = form.email.includes("@") || form.phone.replace(/\D/g, "").length >= 5;
+    if (!hasContact) return;
+    const payload = JSON.stringify({ form, offer, step });
+    if (payload === lastPartialPayload.current) return;
+    window.clearTimeout(partialTimer.current);
+    partialTimer.current = window.setTimeout(() => {
+      savePartialOfferLead({
+        form,
+        offer,
+        source: "flowarm-website",
+        lastStep: step,
+        submittedAt: new Date().toISOString()
+      })
+        .then(() => {
+          lastPartialPayload.current = payload;
+        })
+        .catch(() => {});
+    }, 900);
+    return () => window.clearTimeout(partialTimer.current);
+  }, [consent, form, offer, step, submitState]);
 
   const submitLead = async () => {
     setSubmitState("submitting");

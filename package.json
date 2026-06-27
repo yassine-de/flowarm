@@ -8,7 +8,8 @@
     "build": "vite build",
     "preview": "vite preview --host 127.0.0.1",
     "server": "node server/index.js",
-    "prepare-assets": "node scripts/prepare-assets.mjs"
+    "prepare-assets": "node scripts/prepare-assets.mjs",
+    "seed:admin": "node scripts/seed-admin.mjs"
   },
   "dependencies": {
     "@vitejs/plugin-react": "^5.0.4",
