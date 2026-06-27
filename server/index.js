@@ -171,7 +171,7 @@ async function saveOffer({ offerNo, status, project, prices, totals }) {
   if (pool) {
     const result = await pool.query(
       "insert into offers (offer_no, status, project, prices, totals) values ($1, $2, $3, $4, $5) returning id, offer_no as \"offerNo\", status, project, totals, created_at as \"createdAt\"",
-      [offerNo, status, project, prices, totals]
+      [offerNo, status, toJson(project), toJson(prices), toJson(totals)]
     );
     return result.rows[0];
   }
@@ -198,7 +198,7 @@ async function saveCompletedOffer({ offerNo, project, prices, totals }) {
          set status = 'Neu', project = $2, prices = $3, totals = $4
          where id = $1
          returning id, offer_no as "offerNo", status, project, totals, created_at as "createdAt"`,
-        [existing.rows[0].id, project, prices, totals]
+        [existing.rows[0].id, toJson(project), toJson(prices), toJson(totals)]
       );
       return result.rows[0];
     }
@@ -236,7 +236,7 @@ async function savePartialOffer({ offerNo, project, prices, totals }) {
          set project = $2, prices = $3, totals = $4
          where id = $1
          returning id, offer_no as "offerNo", status, project, totals, created_at as "createdAt"`,
-        [existing.rows[0].id, project, prices, totals]
+        [existing.rows[0].id, toJson(project), toJson(prices), toJson(totals)]
       );
       return result.rows[0];
     }
@@ -403,6 +403,10 @@ function sanitizePriceSettings(body) {
   };
   const valid = Object.values(candidate).every((value) => Number.isFinite(value) && value >= 0 && value < 100000);
   return valid ? candidate : null;
+}
+
+function toJson(value) {
+  return JSON.stringify(value ?? null);
 }
 
 const shouldListen = !process.env.NETLIFY && !process.env.AWS_LAMBDA_FUNCTION_NAME;
