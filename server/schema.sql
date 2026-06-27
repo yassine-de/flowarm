@@ -47,3 +47,12 @@ create table if not exists price_settings (
   leveling numeric not null,
   updated_at timestamptz not null default now()
 );
+
+create table if not exists visitor_events (
+  id uuid primary key default gen_random_uuid(),
+  ip text,
+  path text,
+  referrer text,
+  user_agent text,
+  created_at timestamptz not null default now()
+);

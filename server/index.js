@@ -15,7 +15,7 @@ const databaseUrl = process.env.DATABASE_URL;
 const databaseNeedsSsl = databaseUrl && !/localhost|127\.0\.0\.1/i.test(databaseUrl);
 const pool = databaseUrl ? new pg.Pool({ connectionString: databaseUrl, ssl: databaseNeedsSsl ? { rejectUnauthorized: false } : false }) : null;
 const defaultPriceSettings = { setup: 270, milling: 27, manifold: 600, closing: 9, leveling: 24 };
-const memory = { users: [], offers: [], priceSettings: { ...defaultPriceSettings, updatedAt: new Date().toISOString() } };
+const memory = { users: [], offers: [], visitorEvents: [], priceSettings: { ...defaultPriceSettings, updatedAt: new Date().toISOString() } };
 const offerStatuses = ["Unvollständig", "Neu", "Angebot gesendet", "Termin gebucht", "Bestätigt", "In Bearbeitung", "Abgeschlossen"];
 let adminBootstrapPromise;
 
@@ -41,6 +41,16 @@ app.get("/api/health", (_req, res) => {
 
 app.get("/api/prices", async (_req, res) => {
   res.json(await getPriceSettings());
+});
+
+app.post("/api/analytics/visit", async (req, res) => {
+  await saveVisitorEvent({
+    ip: getClientIp(req),
+    path: String(req.body?.path || "/").slice(0, 500),
+    referrer: String(req.body?.referrer || "").slice(0, 1000),
+    userAgent: String(req.headers["user-agent"] || "").slice(0, 1000)
+  });
+  res.json({ ok: true });
 });
 
 app.post("/api/auth/register", async (req, res) => {
@@ -76,6 +86,7 @@ app.post("/api/offers", async (req, res) => {
     totals: { net: offer.net, vat: offer.vat, gross: offer.gross }
   });
   await notifyLead({ offerNo: saved.offerNo, form, offer }).catch((error) => console.warn("Lead notification failed:", error.message));
+  await notifyCustomer({ offerNo: saved.offerNo, form, offer }).catch((error) => console.warn("Customer notification failed:", error.message));
   res.json(saved);
 });
 
@@ -93,6 +104,10 @@ app.post("/api/offers/partial", async (req, res) => {
 
 app.get("/api/admin/offers", requireAuth, requireRole("admin", "staff"), async (_req, res) => {
   res.json(await listOffers());
+});
+
+app.get("/api/admin/analytics", requireAuth, requireRole("admin", "staff"), async (_req, res) => {
+  res.json(await getAnalytics());
 });
 
 app.get("/api/admin/prices", requireAuth, requireRole("admin", "staff"), async (_req, res) => {
@@ -263,6 +278,53 @@ async function listOffers() {
   return memory.offers;
 }
 
+async function saveVisitorEvent({ ip, path, referrer, userAgent }) {
+  if (pool) {
+    await ensureVisitorEventsTable();
+    await pool.query(
+      "insert into visitor_events (ip, path, referrer, user_agent) values ($1, $2, $3, $4)",
+      [ip || null, path || "/", referrer || null, userAgent || null]
+    );
+    return;
+  }
+  memory.visitorEvents.push({ id: randomUUID(), ip, path, referrer, userAgent, createdAt: new Date().toISOString() });
+}
+
+async function getAnalytics() {
+  if (pool) {
+    await ensureVisitorEventsTable();
+    const [summary, recent] = await Promise.all([
+      pool.query(
+        `select
+          count(*)::int as "totalVisits",
+          count(distinct ip)::int as "uniqueIps",
+          count(*) filter (where created_at >= now() - interval '24 hours')::int as "visits24h",
+          count(*) filter (where created_at >= now() - interval '7 days')::int as "visits7d"
+         from visitor_events`
+      ),
+      pool.query(
+        `select id, ip, path, referrer, user_agent as "userAgent", created_at as "createdAt"
+         from visitor_events
+         order by created_at desc
+         limit 100`
+      )
+    ]);
+    return { summary: summary.rows[0], recent: recent.rows };
+  }
+  const now = Date.now();
+  const day = 24 * 60 * 60 * 1000;
+  const week = 7 * day;
+  return {
+    summary: {
+      totalVisits: memory.visitorEvents.length,
+      uniqueIps: new Set(memory.visitorEvents.map((event) => event.ip).filter(Boolean)).size,
+      visits24h: memory.visitorEvents.filter((event) => now - new Date(event.createdAt).getTime() <= day).length,
+      visits7d: memory.visitorEvents.filter((event) => now - new Date(event.createdAt).getTime() <= week).length
+    },
+    recent: [...memory.visitorEvents].reverse().slice(0, 100)
+  };
+}
+
 async function getPriceSettings() {
   if (pool) {
     await ensurePriceSettingsTable();
@@ -318,6 +380,19 @@ async function ensurePriceSettingsTable() {
   `);
 }
 
+async function ensureVisitorEventsTable() {
+  await pool.query(`
+    create table if not exists visitor_events (
+      id uuid primary key default gen_random_uuid(),
+      ip text,
+      path text,
+      referrer text,
+      user_agent text,
+      created_at timestamptz not null default now()
+    )
+  `);
+}
+
 async function updateOfferStatus(id, status) {
   if (pool) {
     const result = await pool.query(
@@ -333,14 +408,7 @@ async function updateOfferStatus(id, status) {
 
 async function notifyLead({ offerNo, form, offer }) {
   if (!process.env.SMTP_HOST || !process.env.LEAD_NOTIFICATION_TO) return;
-  const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: Number(process.env.SMTP_PORT || 587),
-    secure: process.env.SMTP_SECURE === "true",
-    auth: process.env.SMTP_USER ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS } : undefined,
-    disableFileAccess: true,
-    disableUrlAccess: true
-  });
+  const transporter = createMailTransporter();
   await transporter.sendMail({
     from: process.env.MAIL_FROM || "FloWarm <info@flowarm.de>",
     to: process.env.LEAD_NOTIFICATION_TO,
@@ -355,6 +423,47 @@ async function notifyLead({ offerNo, form, offer }) {
       `Fläche: ${form.area} m²`,
       `Brutto: ${new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" }).format(offer.gross)}`
     ].join("\n")
+  });
+}
+
+async function notifyCustomer({ offerNo, form, offer }) {
+  if (!process.env.SMTP_HOST || !validEmail(form.email)) return;
+  const transporter = createMailTransporter();
+  const format = (value) => new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" }).format(value || 0);
+  const positions = (offer.positions || [])
+    .map((item) => `${item.label}: ${item.qty} ${item.unit} x ${format(item.price)} = ${format(Number(item.qty || 0) * Number(item.price || 0))}`)
+    .join("\n");
+  await transporter.sendMail({
+    from: process.env.MAIL_FROM || "FloWarm <info@flowarm.de>",
+    to: form.email,
+    subject: `Ihr vorläufiges FloWarm Angebot ${offerNo}`,
+    text: [
+      `Hallo ${form.name},`,
+      "",
+      `vielen Dank für Ihre Anfrage. Hier ist Ihr vorläufiges FloWarm Angebot ${offerNo}:`,
+      "",
+      positions,
+      "",
+      `Netto: ${format(offer.net)}`,
+      `19 % MwSt.: ${format(offer.vat)}`,
+      `Brutto: ${format(offer.gross)}`,
+      "",
+      "Der Preis ist vorbehaltlich technischer Prüfung. Wir melden uns zur Abstimmung der nächsten Schritte.",
+      "",
+      "Freundliche Grüße",
+      "Ihr FloWarm Team"
+    ].join("\n")
+  });
+}
+
+function createMailTransporter() {
+  return nodemailer.createTransport({
+    host: process.env.SMTP_HOST,
+    port: Number(process.env.SMTP_PORT || 587),
+    secure: process.env.SMTP_SECURE === "true",
+    auth: process.env.SMTP_USER ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS } : undefined,
+    disableFileAccess: true,
+    disableUrlAccess: true
   });
 }
 
@@ -391,6 +500,11 @@ function hasUsableContact(form) {
   const email = String(form.email || "");
   const phone = String(form.phone || "").replace(/\D/g, "");
   return validEmail(email) || phone.length >= 5;
+}
+
+function getClientIp(req) {
+  const forwarded = req.headers["x-nf-client-connection-ip"] || req.headers["x-forwarded-for"] || req.socket?.remoteAddress || "";
+  return String(Array.isArray(forwarded) ? forwarded[0] : forwarded).split(",")[0].trim();
 }
 
 function sanitizePriceSettings(body) {

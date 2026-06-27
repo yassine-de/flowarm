@@ -76,7 +76,8 @@ const pages = {
         heading: "6. Cookies und lokale Speicherung",
         body: [
           "Wir nutzen technisch notwendige lokale Speicherung, um Cookie-Entscheidungen, Logins und grundlegende Websitefunktionen bereitzustellen.",
-          "Nicht notwendige Analyse- oder Marketing-Technologien werden erst nach Ihrer Einwilligung aktiviert. Eine erteilte Einwilligung koennen Sie jederzeit mit Wirkung fuer die Zukunft widerrufen."
+          "Nicht notwendige Analyse- oder Marketing-Technologien werden erst nach Ihrer Einwilligung aktiviert. Eine erteilte Einwilligung koennen Sie jederzeit mit Wirkung fuer die Zukunft widerrufen.",
+          "Bei aktivierter Analyse koennen Zeitpunkt des Besuchs, aufgerufene Seite, Referrer, User-Agent und IP-Adresse verarbeitet werden, damit wir Reichweite und Nutzung der Website auswerten koennen."
         ]
       },
       {

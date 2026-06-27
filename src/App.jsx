@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowRight, CheckCircle2, ClipboardCheck, Gauge, Hammer, Heater, MapPin, Medal, ShieldCheck, Sparkles, TrendingUp } from "lucide-react";
+import { ArrowRight, CheckCircle2, ClipboardCheck, Gauge, Hammer, Heater, MapPin, Medal, MessageCircle, ShieldCheck, Sparkles, TrendingUp } from "lucide-react";
 import AdminDashboard from "./components/AdminDashboard";
 import AuthModal from "./components/AuthModal";
 import CookieBanner from "./components/CookieBanner";
@@ -8,7 +8,7 @@ import Layout from "./components/Layout";
 import QuizFunnel from "./components/QuizFunnel";
 import ScrollStory from "./components/ScrollStory";
 import { assets, cityPages, translations } from "./data/content";
-import { getCurrentUser } from "./lib/api";
+import { getCurrentUser, trackVisit } from "./lib/api";
 import CityLandingPage from "./pages/CityLandingPage";
 import LegalPage from "./pages/LegalPage";
 
@@ -32,6 +32,21 @@ export default function App() {
       })
       .catch(() => localStorage.removeItem("flowarm-auth-token"));
   }, []);
+
+  useEffect(() => {
+    if (user || localStorage.getItem("flowarm-cookie-choice") !== "accepted") return;
+    trackVisit({ path, referrer: document.referrer }).catch(() => {});
+  }, [path, user]);
+
+  useEffect(() => {
+    const onConsent = () => {
+      if (!user && localStorage.getItem("flowarm-cookie-choice") === "accepted") {
+        trackVisit({ path: window.location.pathname, referrer: document.referrer }).catch(() => {});
+      }
+    };
+    window.addEventListener("flowarm-cookie-choice", onConsent);
+    return () => window.removeEventListener("flowarm-cookie-choice", onConsent);
+  }, [user]);
   const go = (target) => {
     if (target === "/") {
       window.history.pushState({}, "", "/");
@@ -96,6 +111,7 @@ export default function App() {
         <main>
           <ScrollStory t={t} go={go} />
           <StickyCta go={go} />
+          <WhatsAppButton />
           <MarketLeaderSection go={go} />
           <TrustSection go={go} />
           <ServiceDetailsSection />
@@ -116,6 +132,20 @@ function StickyCta({ go }) {
     <button onClick={() => go("#angebot")} className="fixed bottom-5 right-5 z-40 hidden rounded-full bg-warm px-5 py-3 text-sm font-bold text-ink shadow-glow md:block">
       Angebot berechnen
     </button>
+  );
+}
+
+function WhatsAppButton() {
+  return (
+    <a
+      href="https://wa.me/4915158493054?text=Hallo%20FloWarm%2C%20ich%20interessiere%20mich%20f%C3%BCr%20eine%20Fu%C3%9Fbodenheizung."
+      target="_blank"
+      rel="noreferrer"
+      className="fixed bottom-5 left-5 z-40 inline-flex items-center gap-2 rounded-full bg-[#25d366] px-4 py-3 text-sm font-bold text-white shadow-2xl shadow-black/30 transition hover:-translate-y-0.5"
+      aria-label="FloWarm per WhatsApp kontaktieren"
+    >
+      <MessageCircle size={18} /> WhatsApp
+    </a>
   );
 }
 

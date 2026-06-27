@@ -26,6 +26,16 @@ export async function getPriceSettings() {
   return response.json();
 }
 
+export async function trackVisit(payload) {
+  const response = await fetch(`${apiBase}/api/analytics/visit`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+  if (!response.ok) throw new Error("visit_track_failed");
+  return response.json();
+}
+
 export async function loginUser(credentials) {
   const response = await fetch(`${apiBase}/api/auth/login`, {
     method: "POST",
@@ -69,5 +79,13 @@ export async function updateAdminPrices(token, prices) {
     body: JSON.stringify(prices)
   });
   if (!response.ok) throw new Error("admin_prices_update_failed");
+  return response.json();
+}
+
+export async function getAdminAnalytics(token) {
+  const response = await fetch(`${apiBase}/api/admin/analytics`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  if (!response.ok) throw new Error("admin_analytics_failed");
   return response.json();
 }

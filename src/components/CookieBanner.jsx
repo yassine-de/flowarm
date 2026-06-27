@@ -4,6 +4,7 @@ export default function CookieBanner({ go }) {
   const [visible, setVisible] = useState(() => !localStorage.getItem("flowarm-cookie-choice"));
   const save = (choice) => {
     localStorage.setItem("flowarm-cookie-choice", choice);
+    window.dispatchEvent(new CustomEvent("flowarm-cookie-choice", { detail: choice }));
     setVisible(false);
   };
 
