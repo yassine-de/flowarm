@@ -17,6 +17,7 @@ const pool = databaseUrl ? new pg.Pool({ connectionString: databaseUrl, ssl: dat
 const defaultPriceSettings = { setup: 270, milling: 27, manifold: 600, closing: 9, leveling: 24 };
 const memory = { users: [], offers: [], priceSettings: { ...defaultPriceSettings, updatedAt: new Date().toISOString() } };
 const offerStatuses = ["Unvollständig", "Neu", "Angebot gesendet", "Termin gebucht", "Bestätigt", "In Bearbeitung", "Abgeschlossen"];
+let adminBootstrapPromise;
 
 if (isProduction && !jwtSecret) {
   throw new Error("JWT_SECRET is required in production");
@@ -24,8 +25,15 @@ if (isProduction && !jwtSecret) {
 
 app.use(cors({ origin: process.env.CORS_ORIGIN || true }));
 app.use(express.json({ limit: "2mb" }));
-
-await bootstrapAdmin();
+app.use(async (_req, res, next) => {
+  try {
+    await ensureBootstrapAdmin();
+    next();
+  } catch (error) {
+    console.error("Admin bootstrap failed:", error.message);
+    res.status(500).json({ error: "bootstrap_failed" });
+  }
+});
 
 app.get("/api/health", (_req, res) => {
   res.json({ ok: true, service: "flowarm-api", database: Boolean(pool) });
@@ -361,6 +369,14 @@ async function bootstrapAdmin() {
     phone: null,
     role: "admin"
   });
+}
+
+function ensureBootstrapAdmin() {
+  adminBootstrapPromise ||= bootstrapAdmin().catch((error) => {
+    adminBootstrapPromise = null;
+    throw error;
+  });
+  return adminBootstrapPromise;
 }
 
 function validEmail(email) {
