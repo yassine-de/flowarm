@@ -23,6 +23,15 @@ button, input, select, textarea {
   font: inherit;
 }
 
+.flowarm-input:-webkit-autofill,
+.flowarm-input:-webkit-autofill:hover,
+.flowarm-input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #05070a;
+  box-shadow: 0 0 0 1000px #ffffff inset;
+  caret-color: #05070a;
+  transition: background-color 9999s ease-in-out 0s;
+}
+
 .glass {
   background: linear-gradient(140deg, rgba(255,255,255,.12), rgba(255,255,255,.05));
   border: 1px solid rgba(255,255,255,.14);

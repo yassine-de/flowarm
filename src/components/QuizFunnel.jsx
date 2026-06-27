@@ -65,7 +65,7 @@ export default function QuizFunnel({ t }) {
   const lastPartialPayload = useRef("");
   const offer = useMemo(() => calculateOffer(form, prices), [form, prices]);
   const set = (key, value) => setForm((current) => ({ ...current, [key]: value }));
-  const inputClass = "rounded-md border border-ink/12 bg-[#fff8ed] px-4 py-4 text-ink shadow-inner shadow-black/5 outline-none transition placeholder:text-ink/38 focus:border-warm focus:bg-white focus:ring-4 focus:ring-warm/15";
+  const inputClass = "flowarm-input rounded-md border border-ink/12 bg-white px-4 py-4 text-ink shadow-sm outline-none transition placeholder:text-ink/38 hover:border-warm/45 focus:border-warm focus:ring-4 focus:ring-warm/15";
   const steps = [
     { title: "Immobilientyp", field: "propertyType", choices: ["Wohnung", "Einfamilienhaus", "Mehrfamilienhaus", "Gewerbe"] },
     { title: "Projektart", field: "projectType", choices: ["Sanierung", "Neubau"] },
@@ -170,17 +170,17 @@ export default function QuizFunnel({ t }) {
                 )}
                 {current.custom === "contact" && (
                   <div className="mt-7 grid gap-4 sm:grid-cols-2">
-                    <input value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="Name" className={inputClass} />
-                    <input value={form.email} onChange={(e) => set("email", e.target.value)} placeholder="E-Mail" className={inputClass} />
-                    <input value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="Telefon" className={inputClass} />
-                    <label className="flex items-start gap-3 rounded-md border border-ink/10 bg-[#fff8ed] p-4 text-sm leading-6 text-ink/62 sm:col-span-2">
-                      <input checked={consent} onChange={(event) => setConsent(event.target.checked)} type="checkbox" className="mt-1 accent-warm" />
+                    <input value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="Name" autoComplete="name" className={inputClass} />
+                    <input value={form.email} onChange={(e) => set("email", e.target.value)} placeholder="E-Mail" autoComplete="email" className={inputClass} />
+                    <input value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="Telefon" autoComplete="tel" className={inputClass} />
+                    <label className="flex cursor-pointer items-start gap-4 rounded-md border border-warm/20 bg-[#fff8ed] p-5 text-sm leading-6 text-ink/72 transition hover:border-warm/45 hover:bg-[#fff4e4] sm:col-span-2">
+                      <input checked={consent} onChange={(event) => setConsent(event.target.checked)} type="checkbox" className="mt-1 h-5 w-5 shrink-0 rounded border-ink/25 accent-warm" />
                       <span>
-                        Ich habe die <a href="/datenschutz" className="font-semibold text-warm underline decoration-warm/40 underline-offset-4">Datenschutzerklaerung</a> gelesen und bin einverstanden, dass FloWarm meine Angaben zur Angebotserstellung und Kontaktaufnahme per E-Mail oder Telefon verarbeitet.
+                        Ich habe die <a href="/datenschutz" className="font-semibold text-warm underline decoration-warm/40 underline-offset-4">Datenschutzerklärung</a> gelesen und bin einverstanden, dass FloWarm meine Angaben zur Angebotserstellung und Kontaktaufnahme per E-Mail oder Telefon verarbeitet.
                       </span>
                     </label>
                     {!canContinue && (
-                      <p className="text-sm text-ink/50 sm:col-span-2">Bitte Name, E-Mail, Telefon und Kontakt-Einwilligung ausfüllen.</p>
+                      <p className="text-sm text-ink/45 sm:col-span-2">Bitte alle Kontaktdaten eintragen und die Einwilligung bestätigen.</p>
                     )}
                   </div>
                 )}
