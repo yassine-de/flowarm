@@ -75,7 +75,7 @@ app.post("/api/offers", async (req, res) => {
     prices: offer.positions,
     totals: { net: offer.net, vat: offer.vat, gross: offer.gross }
   });
-  await notifyLead({ offerNo, form, offer }).catch((error) => console.warn("Lead notification failed:", error.message));
+  await notifyLead({ offerNo: saved.offerNo, form, offer }).catch((error) => console.warn("Lead notification failed:", error.message));
   res.json(saved);
 });
 
