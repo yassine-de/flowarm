@@ -86,8 +86,8 @@ app.post("/api/offers", async (req, res) => {
     prices: offer.positions,
     totals: { net: offer.net, vat: offer.vat, gross: offer.gross }
   });
+  await queueOfferNotifications({ offerNo: saved.offerNo, form, offer });
   res.json(saved);
-  queueOfferNotifications({ offerNo: saved.offerNo, form, offer });
 });
 
 app.post("/api/offers/partial", async (req, res) => {
@@ -426,11 +426,14 @@ async function notifyLead({ offerNo, form, offer }) {
   });
 }
 
-function queueOfferNotifications(payload) {
-  setTimeout(() => {
-    notifyLead(payload).catch((error) => console.warn("Lead notification failed:", error.message));
-    notifyCustomerWithPdf(payload).catch((error) => console.warn("Customer notification failed:", error.message));
-  }, 0);
+async function queueOfferNotifications(payload) {
+  const results = await Promise.allSettled([
+    notifyLead(payload),
+    notifyCustomerWithPdf(payload)
+  ]);
+  const [leadResult, customerResult] = results;
+  if (leadResult.status === "rejected") console.warn("Lead notification failed:", leadResult.reason?.message || leadResult.reason);
+  if (customerResult.status === "rejected") console.warn("Customer notification failed:", customerResult.reason?.message || customerResult.reason);
 }
 
 async function notifyCustomer({ offerNo, form, offer }) {
