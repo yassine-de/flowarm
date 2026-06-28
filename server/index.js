@@ -6,6 +6,7 @@ import bcrypt from "bcryptjs";
 import nodemailer from "nodemailer";
 import pg from "pg";
 import { randomUUID } from "node:crypto";
+import { createOfferPdf } from "../src/lib/pdf.js";
 
 const app = express();
 const port = process.env.PORT || 8787;
@@ -428,7 +429,7 @@ async function notifyLead({ offerNo, form, offer }) {
 function queueOfferNotifications(payload) {
   setTimeout(() => {
     notifyLead(payload).catch((error) => console.warn("Lead notification failed:", error.message));
-    notifyCustomer(payload).catch((error) => console.warn("Customer notification failed:", error.message));
+    notifyCustomerWithPdf(payload).catch((error) => console.warn("Customer notification failed:", error.message));
   }, 0);
 }
 
@@ -459,6 +460,84 @@ async function notifyCustomer({ offerNo, form, offer }) {
       "Freundliche Grüße",
       "Ihr FloWarm Team"
     ].join("\n")
+  });
+}
+
+async function notifyCustomerWithPdf({ offerNo, form, offer }) {
+  if (!process.env.SMTP_HOST || !validEmail(form.email)) return;
+  const transporter = createMailTransporter();
+  const format = (value) => new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" }).format(value || 0);
+  const pdf = createOfferPdf({ form, offer, offerNo });
+  const pdfBuffer = Buffer.from(pdf.output("arraybuffer"));
+  const positionRows = (offer.positions || [])
+    .map((item) => `
+      <tr>
+        <td style="padding:10px 0;border-bottom:1px solid #e8e1d8;color:#2b2b2b;">${escapeHtml(item.label)}</td>
+        <td style="padding:10px 0;border-bottom:1px solid #e8e1d8;text-align:right;color:#2b2b2b;">${escapeHtml(String(item.qty))} ${escapeHtml(item.unit)}</td>
+        <td style="padding:10px 0;border-bottom:1px solid #e8e1d8;text-align:right;font-weight:700;color:#111111;">${format(Number(item.qty || 0) * Number(item.price || 0))}</td>
+      </tr>
+    `)
+    .join("");
+  const textPositions = (offer.positions || [])
+    .map((item) => `${item.label}: ${item.qty} ${item.unit} = ${format(Number(item.qty || 0) * Number(item.price || 0))}`)
+    .join("\n");
+  const html = `
+    <div style="margin:0;padding:0;background:#f7f4ef;font-family:Arial,Helvetica,sans-serif;color:#111111;">
+      <div style="max-width:680px;margin:0 auto;padding:28px 18px;">
+        <div style="background:#0b0b0d;border-radius:12px 12px 0 0;padding:24px 28px;border-bottom:4px solid #f28a18;">
+          <div style="font-size:24px;font-weight:800;color:#ffffff;">FloWarm</div>
+          <div style="margin-top:6px;font-size:12px;font-weight:700;color:#f28a18;letter-spacing:3px;text-transform:uppercase;">Vorläufiges Angebot</div>
+        </div>
+        <div style="background:#ffffff;padding:28px;border-radius:0 0 12px 12px;border:1px solid #eee7de;border-top:0;">
+          <p style="margin:0 0 16px;font-size:16px;line-height:1.6;">Hallo ${escapeHtml(form.name)},</p>
+          <p style="margin:0 0 16px;font-size:16px;line-height:1.6;">vielen Dank für Ihre Anfrage und Ihr Interesse an FloWarm. Wir freuen uns, dass Sie sich ein Angebot für Ihre Fußbodenheizung eingeholt haben.</p>
+          <p style="margin:0 0 22px;font-size:16px;line-height:1.6;">Im Anhang finden Sie Ihr vorläufiges Angebot <strong>${escapeHtml(offerNo)}</strong> als PDF. Wenn das Angebot für Sie passt, freuen wir uns sehr über Ihren Auftrag und stimmen anschließend die technische Prüfung sowie den nächsten Schritt mit Ihnen ab.</p>
+          <div style="background:#fff8ed;border:1px solid #f2d7b4;border-radius:10px;padding:18px;margin:22px 0;">
+            <div style="font-size:13px;color:#755127;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;">Vorläufiger Brutto-Festpreis</div>
+            <div style="margin-top:6px;font-size:30px;font-weight:800;color:#111111;">${format(offer.gross)}</div>
+            <div style="margin-top:4px;font-size:13px;color:#755127;">inkl. 19 % MwSt., vorbehaltlich technischer Prüfung</div>
+          </div>
+          <table style="width:100%;border-collapse:collapse;font-size:14px;margin-top:18px;">${positionRows}
+            <tr><td colspan="2" style="padding:14px 0 4px;text-align:right;color:#666666;">Netto</td><td style="padding:14px 0 4px;text-align:right;color:#111111;">${format(offer.net)}</td></tr>
+            <tr><td colspan="2" style="padding:4px 0;text-align:right;color:#666666;">19 % MwSt.</td><td style="padding:4px 0;text-align:right;color:#111111;">${format(offer.vat)}</td></tr>
+            <tr><td colspan="2" style="padding:10px 0 0;text-align:right;font-weight:800;color:#111111;">Gesamt</td><td style="padding:10px 0 0;text-align:right;font-weight:800;color:#111111;">${format(offer.gross)}</td></tr>
+          </table>
+          <p style="margin:26px 0 0;font-size:15px;line-height:1.6;color:#333333;">Bei Fragen antworten Sie einfach auf diese E-Mail oder rufen Sie uns an. Wir melden uns zeitnah bei Ihnen.</p>
+          <p style="margin:22px 0 0;font-size:15px;line-height:1.6;color:#333333;">Freundliche Grüße<br><strong>Ihr FloWarm Team</strong></p>
+        </div>
+      </div>
+    </div>
+  `;
+  await transporter.sendMail({
+    from: process.env.MAIL_FROM || "FloWarm <info@flowarm.de>",
+    to: form.email,
+    subject: `Ihr vorläufiges FloWarm Angebot ${offerNo}`,
+    html,
+    text: [
+      `Hallo ${form.name},`,
+      "",
+      "vielen Dank für Ihre Anfrage und Ihr Interesse an FloWarm.",
+      `Im Anhang finden Sie Ihr vorläufiges Angebot ${offerNo} als PDF.`,
+      "Wenn das Angebot für Sie passt, freuen wir uns sehr über Ihren Auftrag.",
+      "",
+      textPositions,
+      "",
+      `Netto: ${format(offer.net)}`,
+      `19 % MwSt.: ${format(offer.vat)}`,
+      `Brutto: ${format(offer.gross)}`,
+      "",
+      "Der Preis ist vorbehaltlich technischer Prüfung. Wir melden uns zur Abstimmung der nächsten Schritte.",
+      "",
+      "Freundliche Grüße",
+      "Ihr FloWarm Team"
+    ].join("\n"),
+    attachments: [
+      {
+        filename: `FloWarm-Angebot-${offerNo}.pdf`,
+        content: pdfBuffer,
+        contentType: "application/pdf"
+      }
+    ]
   });
 }
 
@@ -511,6 +590,15 @@ function hasUsableContact(form) {
 function getClientIp(req) {
   const forwarded = req.headers["x-nf-client-connection-ip"] || req.headers["x-forwarded-for"] || req.socket?.remoteAddress || "";
   return String(Array.isArray(forwarded) ? forwarded[0] : forwarded).split(",")[0].trim();
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }
 
 function sanitizePriceSettings(body) {
