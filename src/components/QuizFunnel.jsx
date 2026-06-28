@@ -199,13 +199,13 @@ export default function QuizFunnel({ t }) {
                       </div>
                     )}
                     <PriceCalculator offer={offer} hint={t.legalHint} />
-                    <PdfOffer form={form} offer={offer} />
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <button onClick={submitLead} disabled={submitState === "submitting" || submitState === "success"} className="flex items-center justify-center gap-2 rounded-md bg-ink px-5 py-4 font-semibold text-white disabled:opacity-50">
-                        <CalendarCheck size={18} /> {submitState === "submitting" ? "Wird gesendet..." : "Anfrage absenden"}
+                    <div className="grid gap-3 sm:grid-cols-[1.2fr_.8fr]">
+                      <button onClick={submitLead} disabled={submitState === "submitting" || submitState === "success"} className="flex min-h-[60px] items-center justify-center gap-2 rounded-md bg-warm px-5 py-4 text-base font-bold text-ink shadow-glow transition hover:-translate-y-0.5 disabled:translate-y-0 disabled:opacity-60">
+                        <CalendarCheck size={20} /> {submitState === "submitting" ? "Anfrage wird gesendet..." : "Anfrage absenden"}
                       </button>
-                      <button className="flex items-center justify-center gap-2 rounded-md border border-ink/15 px-5 py-4 font-semibold"><PhoneCall size={18} /> Rückruf anfordern</button>
+                      <button className="flex min-h-[60px] items-center justify-center gap-2 rounded-md border border-ink/15 bg-white px-5 py-4 font-semibold text-ink transition hover:border-warm/50 hover:bg-[#fff8ed]"><PhoneCall size={18} /> Rückruf</button>
                     </div>
+                    <PdfOffer form={form} offer={offer} />
                   </div>
                 )}
               </motion.div>

@@ -85,9 +85,8 @@ app.post("/api/offers", async (req, res) => {
     prices: offer.positions,
     totals: { net: offer.net, vat: offer.vat, gross: offer.gross }
   });
-  await notifyLead({ offerNo: saved.offerNo, form, offer }).catch((error) => console.warn("Lead notification failed:", error.message));
-  await notifyCustomer({ offerNo: saved.offerNo, form, offer }).catch((error) => console.warn("Customer notification failed:", error.message));
   res.json(saved);
+  queueOfferNotifications({ offerNo: saved.offerNo, form, offer });
 });
 
 app.post("/api/offers/partial", async (req, res) => {
@@ -424,6 +423,13 @@ async function notifyLead({ offerNo, form, offer }) {
       `Brutto: ${new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" }).format(offer.gross)}`
     ].join("\n")
   });
+}
+
+function queueOfferNotifications(payload) {
+  setTimeout(() => {
+    notifyLead(payload).catch((error) => console.warn("Lead notification failed:", error.message));
+    notifyCustomer(payload).catch((error) => console.warn("Customer notification failed:", error.message));
+  }, 0);
 }
 
 async function notifyCustomer({ offerNo, form, offer }) {
