@@ -119,6 +119,7 @@ export default function QuizFunnel({ t }) {
       });
       setSubmittedOffer(result);
       setSubmitState("success");
+      window.location.assign("/danke");
     } catch {
       setSubmitState("error");
     }

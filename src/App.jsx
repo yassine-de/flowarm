@@ -78,6 +78,7 @@ export default function App() {
   const routed = useMemo(() => {
     if (cityPages[path]) return <CityLandingPage path={path} go={go} />;
     if (["/impressum", "/datenschutz", "/agb", "/widerruf"].includes(path)) return <LegalPage path={path} />;
+    if (path === "/danke") return <ThankYouPage go={go} />;
     return null;
   }, [path]);
 
@@ -146,6 +147,28 @@ function WhatsAppButton() {
     >
       <MessageCircle size={18} /> WhatsApp
     </a>
+  );
+}
+
+function ThankYouPage({ go }) {
+  return (
+    <main className="bg-pearl px-4 py-32 text-ink sm:px-6">
+      <section className="mx-auto max-w-4xl rounded-lg bg-white p-8 shadow-2xl shadow-black/10 sm:p-12">
+        <p className="text-sm font-bold uppercase tracking-[0.25em] text-warm">Anfrage erhalten</p>
+        <h1 className="mt-4 text-4xl font-semibold tracking-tight sm:text-6xl">Vielen Dank für Ihre Anfrage.</h1>
+        <p className="mt-6 max-w-2xl text-lg leading-8 text-ink/65">
+          Wir haben Ihre Projektdaten erhalten und melden uns zur technischen Prüfung und Terminabstimmung. Ihr Sofortangebot dient als vorläufiger Festpreis vorbehaltlich Prüfung vor Ort.
+        </p>
+        <div className="mt-8 flex flex-wrap gap-3">
+          <button onClick={() => go("/")} className="rounded-full bg-ink px-6 py-4 font-bold text-white">
+            Zur Startseite
+          </button>
+          <a href="tel:+4915158493054" className="rounded-full border border-ink/15 px-6 py-4 font-bold text-ink">
+            Direkt anrufen
+          </a>
+        </div>
+      </section>
+    </main>
   );
 }
 
