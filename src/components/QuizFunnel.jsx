@@ -1,10 +1,9 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowLeft, ArrowRight, Building2, CalendarCheck, Factory, Home, House, MapPinned, PhoneCall, Ruler, Upload } from "lucide-react";
+import { ArrowLeft, ArrowRight, Building2, CalendarCheck, Factory, Home, House, MailCheck, MapPinned, Ruler, Upload } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { defaultPrices } from "../data/content";
 import { getPriceSettings, savePartialOfferLead, submitOfferLead } from "../lib/api";
 import { calculateOffer } from "../lib/pricing";
-import PdfOffer from "./PdfOffer";
 import PriceCalculator from "./PriceCalculator";
 
 const initial = {
@@ -79,7 +78,9 @@ export default function QuizFunnel({ t }) {
     { title: "Preisübersicht", custom: "price" }
   ];
   const current = steps[step];
-  const canContinue = step !== 8 || (form.name.trim() && form.email.trim() && form.phone.trim() && consent);
+  const hasLocation = form.zipCity.trim().length >= 4;
+  const hasContact = form.name.trim() && form.email.trim() && form.phone.trim() && consent;
+  const canContinue = (step !== 6 || hasLocation) && (step !== 8 || hasContact);
 
   useEffect(() => {
     getPriceSettings().then(setPrices).catch(() => setPrices(defaultPrices));
@@ -109,6 +110,7 @@ export default function QuizFunnel({ t }) {
   }, [consent, form, offer, step, submitState]);
 
   const submitLead = async () => {
+    if (!hasLocation || !hasContact) return;
     setSubmitState("submitting");
     try {
       const result = await submitOfferLead({
@@ -165,8 +167,11 @@ export default function QuizFunnel({ t }) {
                 )}
                 {current.custom === "zipCity" && (
                   <div className="mt-8 rounded-lg border border-warm/18 bg-[#fff8ed] p-5 shadow-inner shadow-black/5">
-                    <input value={form.zipCity} onChange={(e) => set("zipCity", e.target.value)} placeholder="z. B. 60311 Frankfurt" className={`${inputClass} w-full`} />
+                    <input required value={form.zipCity} onChange={(e) => set("zipCity", e.target.value)} placeholder="z. B. 60311 Frankfurt" autoComplete="postal-code" className={`${inputClass} w-full`} />
                     <p className="mt-3 text-sm leading-6 text-ink/55">Damit planen wir Anfahrt, regionale Verfügbarkeit und eine realistische Terminoption.</p>
+                    {!hasLocation && (
+                      <p className="mt-3 text-sm font-semibold text-warm">Bitte PLZ oder Stadt eintragen, damit wir Ihr Angebot berechnen können.</p>
+                    )}
                   </div>
                 )}
                 {current.custom === "contact" && (
@@ -200,13 +205,22 @@ export default function QuizFunnel({ t }) {
                       </div>
                     )}
                     <PriceCalculator offer={offer} hint={t.legalHint} />
-                    <div className="grid gap-3 sm:grid-cols-[1.2fr_.8fr]">
-                      <button onClick={submitLead} disabled={submitState === "submitting" || submitState === "success"} className="flex min-h-[60px] items-center justify-center gap-2 rounded-md bg-warm px-5 py-4 text-base font-bold text-ink shadow-glow transition hover:-translate-y-0.5 disabled:translate-y-0 disabled:opacity-60">
-                        <CalendarCheck size={20} /> {submitState === "submitting" ? "Anfrage wird gesendet..." : "Anfrage absenden"}
+                    <div className="rounded-lg border border-warm/25 bg-[#fff8ed] p-5">
+                      <div className="flex gap-4">
+                        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-warm text-ink">
+                          <MailCheck size={22} />
+                        </span>
+                        <div>
+                          <h4 className="text-xl font-semibold">Kostenloses unverbindliches Angebot per E-Mail erhalten</h4>
+                          <p className="mt-2 text-sm leading-6 text-ink/62">
+                            Wir prüfen Ihre Angaben und senden Ihnen Ihr vorläufiges Angebot per E-Mail zu. Falls technische Details offen sind, melden wir uns kurz telefonisch.
+                          </p>
+                        </div>
+                      </div>
+                      <button onClick={submitLead} disabled={submitState === "submitting" || submitState === "success"} className="mt-5 flex min-h-[64px] w-full items-center justify-center gap-2 rounded-md bg-warm px-5 py-4 text-lg font-bold text-ink shadow-glow transition hover:-translate-y-0.5 disabled:translate-y-0 disabled:opacity-60">
+                        <CalendarCheck size={21} /> {submitState === "submitting" ? "Anfrage wird gesendet..." : "Kostenloses Angebot anfordern"}
                       </button>
-                      <button className="flex min-h-[60px] items-center justify-center gap-2 rounded-md border border-ink/15 bg-white px-5 py-4 font-semibold text-ink transition hover:border-warm/50 hover:bg-[#fff8ed]"><PhoneCall size={18} /> Rückruf</button>
                     </div>
-                    <PdfOffer form={form} offer={offer} />
                   </div>
                 )}
               </motion.div>
