@@ -314,12 +314,14 @@ function drawCompanyFooter(doc) {
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
   doc.setTextColor(...graphite);
-  doc.text("Herrnstr. 8a", 70, y + 39);
-  doc.text("63674 Altenstadt", 70, y + 52);
+  doc.text("Alexander Scholl", 70, y + 37);
+  doc.text("Taunusstrasse 12", 70, y + 50);
+  doc.text("63694 Limeshain", 70, y + 63);
 
-  doc.text("Commerzbank", 245, y + 39);
-  doc.text("IBAN: DE82 5004 0000 0800 9268 00", 245, y + 52);
-  doc.text("BIC: COBADEFXXX", 245, y + 65);
+  doc.text("Commerzbank", 245, y + 35);
+  doc.text("IBAN: DE82 5004 0000 0800 9268 00", 245, y + 48);
+  doc.text("BIC: COBADEFXXX", 245, y + 61);
+  doc.text("St.Nr.: 034 867 31278", 245, y + 74);
 
   doc.text("info@flowarm.de", 405, y + 39);
   doc.text("0151 58493054", 405, y + 52);

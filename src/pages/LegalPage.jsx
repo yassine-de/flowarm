@@ -7,8 +7,9 @@ const pages = {
         heading: "Anbieter",
         body: [
           "FloWarm GmbH",
-          "Herrnstr. 8a",
-          "63674 Altenstadt",
+          "Alexander Scholl",
+          "Taunusstrasse 12",
+          "63694 Limeshain",
           "Deutschland"
         ]
       },
@@ -23,9 +24,16 @@ const pages = {
       {
         heading: "Inhaltlich verantwortlich",
         body: [
-          "FloWarm GmbH",
-          "Herrnstr. 8a",
-          "63674 Altenstadt"
+          "Alexander Scholl",
+          "Taunusstrasse 12",
+          "63694 Limeshain"
+        ]
+      },
+      {
+        heading: "Steuerliche Angaben",
+        body: [
+          "Finanzamt Nidda",
+          "St.Nr.: 034 867 31278"
         ]
       }
     ]
@@ -38,7 +46,7 @@ const pages = {
         heading: "1. Verantwortlicher",
         body: [
           "FloWarm GmbH",
-          "Herrnstr. 8a, 63674 Altenstadt",
+          "Alexander Scholl, Taunusstrasse 12, 63694 Limeshain",
           "E-Mail: info@flowarm.de",
           "Telefon: 0151 58493054"
         ]
