@@ -9,6 +9,7 @@ import QuizFunnel from "./components/QuizFunnel";
 import ScrollStory from "./components/ScrollStory";
 import { assets, cityPages, translations } from "./data/content";
 import { getCurrentUser, trackVisit } from "./lib/api";
+import { grantGoogleConsent, trackOfferConversion, trackPageView } from "./lib/gtag";
 import CityLandingPage from "./pages/CityLandingPage";
 import LegalPage from "./pages/LegalPage";
 
@@ -36,11 +37,14 @@ export default function App() {
   useEffect(() => {
     if (user || localStorage.getItem("flowarm-cookie-choice") !== "accepted") return;
     trackVisit({ path, referrer: document.referrer }).catch(() => {});
+    trackPageView(path);
   }, [path, user]);
 
   useEffect(() => {
-    const onConsent = () => {
+    const onConsent = (event) => {
       if (!user && localStorage.getItem("flowarm-cookie-choice") === "accepted") {
+        grantGoogleConsent();
+        trackPageView(window.location.pathname);
         trackVisit({ path: window.location.pathname, referrer: document.referrer }).catch(() => {});
       }
     };
@@ -151,6 +155,10 @@ function WhatsAppButton() {
 }
 
 function ThankYouPage({ go }) {
+  useEffect(() => {
+    trackOfferConversion();
+  }, []);
+
   return (
     <main className="bg-pearl px-4 py-32 text-ink sm:px-6">
       <section className="mx-auto max-w-4xl rounded-lg bg-white p-8 shadow-2xl shadow-black/10 sm:p-12">

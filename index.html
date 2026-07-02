@@ -6,6 +6,27 @@
     <meta name="description" content="FloWarm GmbH: Fußbodenheizung fräsen und installieren mit Sofortangebot in 2 Minuten." />
     <meta name="theme-color" content="#0b0b0d" />
     <title>FloWarm GmbH | Fußbodenheizung schlüsselfertig in 3 Tagen</title>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-LG9NBTWWHP"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag("consent", "default", {
+        ad_storage: "denied",
+        ad_user_data: "denied",
+        ad_personalization: "denied",
+        analytics_storage: "denied"
+      });
+      gtag("js", new Date());
+      gtag("config", "G-LG9NBTWWHP", { send_page_view: false });
+      if (localStorage.getItem("flowarm-cookie-choice") === "accepted") {
+        gtag("consent", "update", {
+          ad_storage: "granted",
+          ad_user_data: "granted",
+          ad_personalization: "granted",
+          analytics_storage: "granted"
+        });
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>
