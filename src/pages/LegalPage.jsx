@@ -7,9 +7,9 @@ const pages = {
         heading: "Anbieter",
         body: [
           "FloWarm GmbH",
-          "Alexander Scholl",
-          "Taunusstrasse 12",
-          "63694 Limeshain",
+          "Adil Hachmaoui",
+          "Dornfelderweg 2",
+          "61206 Wöllstadt",
           "Deutschland"
         ]
       },
