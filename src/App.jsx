@@ -12,6 +12,7 @@ import { getCurrentUser, trackVisit } from "./lib/api";
 import { grantGoogleConsent, trackOfferConversion, trackPageView } from "./lib/gtag";
 import CityLandingPage from "./pages/CityLandingPage";
 import LegalPage from "./pages/LegalPage";
+import UnderConstructionPage from "./pages/UnderConstructionPage";
 
 export default function App() {
   const [lang, setLang] = useState("de");
@@ -92,6 +93,15 @@ export default function App() {
     setPath("/");
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
+
+  if (!user && !routed) {
+    return (
+      <>
+        <UnderConstructionPage go={go} />
+        <CookieBanner go={go} />
+      </>
+    );
+  }
 
   return (
     <Layout
